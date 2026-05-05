@@ -10,6 +10,13 @@
   body { background: #1a1a1a; min-height: 100vh; font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a1a; }
   #app { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 
+  /* === WHITE PAGE WRAPPER (splash, AI lookup, wizard) === */
+  .page-white { position: fixed; inset: 0; background: #ffffff; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 56px 24px 40px; }
+  .page-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 56px; }
+  .page-brand-logo { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
+  .page-brand-logo svg { width: 100%; height: 100%; }
+  .page-brand-name { font-size: 32px; font-weight: 700; color: #2a2a2a; letter-spacing: -0.6px; }
+
   /* === SPLASH === */
   .splash { position: fixed; inset: 0; background: #ffffff; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 56px 24px 40px; }
   .splash-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 64px; }
@@ -27,7 +34,7 @@
   .splash-card p { color: #555; font-size: 14px; line-height: 1.5; }
 
   /* === AI LOOKUP === */
-  .ai-panel { background: #f0f7f0; border-radius: 16px; padding: 36px; width: 100%; max-width: 640px; }
+  .ai-panel { background: #f7faf7; border: 1px solid #eaf0e8; border-radius: 16px; padding: 36px; width: 100%; max-width: 640px; }
   .ai-panel h2 { color: #1a6b1a; margin-bottom: 8px; }
   .ai-panel .hint { color: #666; font-size: 13px; margin-bottom: 20px; }
   .ai-input-row { display: flex; gap: 12px; }
@@ -1058,6 +1065,11 @@ function renderAiLookup(app) {
   const matched = state._aiMatched || null;
 
   app.innerHTML = `
+    <div class="page-white">
+      <div class="page-brand">
+        <span class="page-brand-logo">${SPLASH_LOGO_SVG}</span>
+        <span class="page-brand-name">PostHarvest</span>
+      </div>
     <div class="ai-panel">
       <h2>AI auto-mock</h2>
       <p class="hint">Enter your company name. We'll search the web for cool-room locations, crops stored, and facility details.</p>
@@ -1101,6 +1113,7 @@ function renderAiLookup(app) {
           <button class="btn btn-link" id="ai-cancel-nf">Cancel</button>
         </div>
       ` : ''}
+    </div>
     </div>
   `;
 
@@ -1229,6 +1242,11 @@ function clearAiAndGoTo(view) {
 function renderWizardStep1(app) {
   const draft = state.wizardDraft;
   app.innerHTML = `
+    <div class="page-white">
+      <div class="page-brand">
+        <span class="page-brand-logo">${SPLASH_LOGO_SVG}</span>
+        <span class="page-brand-name">PostHarvest</span>
+      </div>
     <div class="ai-panel">
       <h2>Step 1 of 2 — Your facility</h2>
       <p class="hint">Tell us where your operation is based.</p>
@@ -1247,6 +1265,7 @@ function renderWizardStep1(app) {
         <div style="flex: 1;"></div>
         <button class="btn btn-primary" id="w1-next">Next →</button>
       </div>
+    </div>
     </div>
   `;
   const nameInput = document.getElementById('w1-name');
@@ -1274,6 +1293,11 @@ function renderWizardStep2(app) {
   const newRoom = state._newRoom || { name: '', address: '', cropId: null, cropDisplay: '' };
 
   app.innerHTML = `
+    <div class="page-white">
+      <div class="page-brand">
+        <span class="page-brand-logo">${SPLASH_LOGO_SVG}</span>
+        <span class="page-brand-name">PostHarvest</span>
+      </div>
     <div class="ai-panel" style="max-width: 720px;">
       <h2>Step 2 of 2 — Add cool-rooms</h2>
       <p class="hint">Add each cool-room with its address and the crop it stores.</p>
@@ -1312,6 +1336,7 @@ function renderWizardStep2(app) {
         <div style="flex: 1;"></div>
         <button class="btn btn-primary" id="w2-done">Done — fetch optimal levels →</button>
       </div>
+    </div>
     </div>
   `;
 
