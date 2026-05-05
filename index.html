@@ -226,15 +226,15 @@ const COMPANIES = [
     rooms: (() => {
       const rooms = [];
       const baseLat = -39.6068, baseLng = 176.8893;
-      // 5 columns × 4 rows = 20 rooms, spread ~0.0008 deg (~80m) per cell
-      for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 5; c++) {
-          const idx = r * 5 + c + 1;
+      // 4 columns × 3 rows = 12 rooms, spread ~0.0008 deg (~80m) per cell
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 4; c++) {
+          const idx = r * 4 + c + 1;
           rooms.push({
             name: 'Rockit Room ' + idx,
             address: '96 Kings Road, Whakatu Cold Stores, Hastings',
-            lat: baseLat + (r - 1.5) * 0.0008,
-            lng: baseLng + (c - 2) * 0.0010,
+            lat: baseLat + (r - 1) * 0.0008,
+            lng: baseLng + (c - 1.5) * 0.0010,
             cropId: 'apple-rockit'
           });
         }
@@ -464,6 +464,7 @@ function assignAttention(rooms) {
   if (!rooms || rooms.length === 0) return;
   let indices;
   if (rooms.length >= 20)      indices = [6, 13];
+  else if (rooms.length >= 12) indices = [3, 8];
   else if (rooms.length >= 10) indices = [Math.floor(rooms.length / 2)];
   else if (rooms.length >= 4)  indices = [rooms.length - 2];
   else                         indices = [rooms.length - 1];
