@@ -339,6 +339,11 @@
   /* === SHIPPING PRIORITY === */
   .ship-btn { background: white; color: #2e7d32; border: 1.5px solid #2e7d32; padding: 7px 14px; border-radius: 18px; cursor: pointer; font-size: 12px; font-weight: 700; transition: background 0.15s, color 0.15s; }
   .ship-btn:hover { background: #2e7d32; color: white; }
+  .order-wrap { position: relative; display: inline-block; }
+  .order-menu { position: absolute; top: calc(100% + 6px); left: 0; background: white; border: 1px solid #d8e0d6; border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); z-index: 1400; min-width: 280px; padding: 6px 0; animation: shipPop 0.15s ease-out; }
+  .order-menu .item { padding: 10px 16px; font-size: 13px; cursor: pointer; color: #1a1a1a; transition: background 0.1s, color 0.1s; }
+  .order-menu .item:hover { background: #f0f7f0; color: #1a6b1a; }
+  .order-menu .item.selected { background: #e8f5e9; color: #1a6b1a; font-weight: 700; }
   .ship-overlay { position: fixed; inset: 0; background: rgba(10,20,10,0.65); z-index: 1500; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.18s ease-out; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   .ship-modal { background: white; border-radius: 14px; width: 100%; max-width: 760px; max-height: 86vh; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,0.5); animation: shipPop 0.25s cubic-bezier(0.2, 0.8, 0.3, 1.2); }
@@ -657,6 +662,8 @@ const DEFAULT_STATE = {
   notifPanelOpen: false,
   toast: null,
   shippingPanelOpen: false,
+  orderMenuOpen: false,
+  orderBy: 'ethylene-desc',
   integrationsPanelOpen: false,
   smsPhone: '',
   _smsDraft: '',
@@ -882,6 +889,70 @@ const TOP_3_ATTENTION_CAUSES = [
     confidence: 52
   }
 ];
+
+const ORDER_OPTIONS = [
+  { key: 'overall',       label: 'Overall Health (all factors)' },
+  { key: 'ethylene-asc',  label: 'Ethylene — lowest to highest' },
+  { key: 'ethylene-desc', label: 'Ethylene — highest to lowest' },
+  { key: 'oxygen',        label: 'Oxygen' },
+  { key: 'co2',           label: 'CO₂' },
+  { key: 'temp',          label: 'Temperature' },
+  { key: 'pressure',      label: 'Atmospheric Pressure' },
+  { key: 'unstable',      label: 'Most Unstable' }
+];
+
+function pseudoPressure(room) {
+  return 1.01 + (roomSeed(room.id) - 0.5) * 0.04;
+}
+
+function sortRoomsByOrder(rooms, key) {
+  const arr = rooms.map((r, i) => ({ room: r, origIdx: i }));
+  switch (key) {
+    case 'ethylene-asc':
+      return arr.sort((a, b) => roomNaturalEthylene(a.room) - roomNaturalEthylene(b.room));
+    case 'ethylene-desc':
+      return arr.sort((a, b) => roomNaturalEthylene(b.room) - roomNaturalEthylene(a.room));
+    case 'oxygen':
+      return arr.sort((a, b) => roomO2(b.room) - roomO2(a.room));
+    case 'co2':
+      return arr.sort((a, b) => roomCO2(b.room) - roomCO2(a.room));
+    case 'temp':
+      return arr.sort((a, b) => roomTemp(b.room) - roomTemp(a.room));
+    case 'pressure':
+      return arr.sort((a, b) => pseudoPressure(b.room) - pseudoPressure(a.room));
+    case 'unstable': {
+      const score = (r) => (r.attentionReason ? 0 : (r.atmosOn ? 2 : 1));
+      return arr.sort((a, b) => score(a.room) - score(b.room));
+    }
+    case 'overall':
+    default: {
+      // Worst first: attention=2, off=1, on=0
+      const score = (r) => (r.attentionReason ? 2 : (r.atmosOn ? 0 : 1));
+      return arr.sort((a, b) => score(b.room) - score(a.room));
+    }
+  }
+}
+
+function metricForOrder(room, key) {
+  switch (key) {
+    case 'ethylene-asc':
+    case 'ethylene-desc':
+      return { value: roomNaturalEthylene(room).toFixed(2), unit: 'ppm natural' };
+    case 'oxygen':
+      return { value: roomO2(room).toFixed(1) + '%', unit: 'O₂' };
+    case 'co2':
+      return { value: roomCO2(room).toFixed(1) + '%', unit: 'CO₂' };
+    case 'temp':
+      return { value: roomTemp(room).toFixed(1) + '°C', unit: 'temp' };
+    case 'pressure':
+      return { value: pseudoPressure(room).toFixed(2), unit: 'atm' };
+    case 'unstable':
+      return { value: room.attentionReason ? 'critical' : (room.atmosOn ? 'stable' : 'drifting'), unit: '' };
+    case 'overall':
+    default:
+      return { value: room.attentionReason ? 'critical' : (room.atmosOn ? 'healthy' : 'sub-optimal'), unit: '' };
+  }
+}
 
 function shipSuggestion(rank, total) {
   const pos = rank / Math.max(1, total - 1); // 0..1
@@ -1631,7 +1702,16 @@ function renderDashboard(app) {
           </div>
           <div class="actions">
             <button class="intg-btn" id="intg-btn" title="Notification channels">Notifications</button>
-            <button class="ship-btn" id="ship-btn" title="List rooms by ethylene highest to lowest">List by ethylene highest to lowest</button>
+            <div class="order-wrap">
+              <button class="ship-btn" id="ship-btn" title="Order rooms by metric">Order ▾</button>
+              ${state.orderMenuOpen ? `
+                <div class="order-menu" id="order-menu">
+                  ${ORDER_OPTIONS.map(o => `
+                    <div class="item ${state.orderBy === o.key ? 'selected' : ''}" data-order="${escHtml(o.key)}">${escHtml(o.label)}</div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
             <button class="atmos-all-btn ${allOn ? 'off' : ''}" id="atmos-all">${allOn ? 'Atmos All OFF' : 'Atmos All ON'}</button>
             <div class="toggle">
               <button id="t-map" class="${state.dashboardView === 'map' ? 'active' : ''}">Map</button>
@@ -1712,13 +1792,35 @@ function renderDashboard(app) {
     state.notifPanelOpen = !state.notifPanelOpen;
     render();
   };
-  document.getElementById('ship-btn').onclick = () => {
-    state.shippingPanelOpen = true;
+  document.getElementById('ship-btn').onclick = (e) => {
+    e.stopPropagation();
+    state.orderMenuOpen = !state.orderMenuOpen;
     state.notifPanelOpen = false;
     state.integrationsPanelOpen = false;
     saveState();
     render();
   };
+  document.querySelectorAll('.order-menu .item').forEach(el => {
+    el.onclick = (e) => {
+      e.stopPropagation();
+      state.orderBy = el.dataset.order;
+      state.orderMenuOpen = false;
+      state.shippingPanelOpen = true;
+      saveState();
+      render();
+    };
+  });
+  // Click outside menu closes it
+  if (state.orderMenuOpen) {
+    setTimeout(() => {
+      document.addEventListener('click', function closeMenu() {
+        state.orderMenuOpen = false;
+        saveState();
+        render();
+        document.removeEventListener('click', closeMenu);
+      }, { once: true });
+    }, 0);
+  }
   document.getElementById('intg-btn').onclick = () => {
     state.integrationsPanelOpen = true;
     state.notifPanelOpen = false;
@@ -1948,42 +2050,60 @@ function wireIntegrationsPanel() {
 }
 
 function renderShippingPanel(facility) {
-  const ranked = facility.rooms
-    .map((r, i) => ({ room: r, origIdx: i, natEthy: roomNaturalEthylene(r) }))
-    .sort((a, b) => b.natEthy - a.natEthy);
+  const orderKey = state.orderBy || 'ethylene-desc';
+  const opt = ORDER_OPTIONS.find(o => o.key === orderKey) || ORDER_OPTIONS[2];
+  const ranked = sortRoomsByOrder(facility.rooms, orderKey);
+  const isEthyleneSort = orderKey === 'ethylene-asc' || orderKey === 'ethylene-desc';
+
+  const subText = isEthyleneSort
+    ? 'Sorted by natural ethylene (ripeness signal). Ripest fruit ships local first; unripe keeps best for long-haul.'
+    : `Rooms ranked worst-to-best by ${opt.label.toLowerCase()}.`;
+
   return `
     <div class="ship-overlay" id="ship-overlay">
       <div class="ship-modal" id="ship-modal" onclick="event.stopPropagation()">
         <div class="ship-head">
           <div>
-            <div class="ship-title">List by ethylene highest to lowest — ${escHtml(facility.name)}</div>
-            <div class="ship-sub">Sorted by natural ethylene (ripeness signal). Send ripest fruit to local markets first; reserve unripe rooms for long-haul export — they keep best.</div>
+            <div class="ship-title">${escHtml(opt.label)} — ${escHtml(facility.name)}</div>
+            <div class="ship-sub">${escHtml(subText)}</div>
           </div>
           <button class="ship-x" id="ship-x" title="Close">×</button>
         </div>
-        <div class="ship-legend">
-          <span class="item"><span class="dot crit"></span>Sell Local — ripe</span>
-          <span class="item"><span class="dot warn"></span>Regional — domestic</span>
-          <span class="item"><span class="dot ok"></span>Export OK — long-haul</span>
-        </div>
+        ${isEthyleneSort ? `
+          <div class="ship-legend">
+            <span class="item"><span class="dot crit"></span>Sell Local — ripe</span>
+            <span class="item"><span class="dot warn"></span>Regional — domestic</span>
+            <span class="item"><span class="dot ok"></span>Export OK — long-haul</span>
+          </div>
+        ` : ''}
         <div class="ship-list">
-          ${ranked.map((r, rank) => {
-            const sug = shipSuggestion(rank, ranked.length);
-            const crop = CROPS[r.room.cropId] || {};
+          ${ranked.map((entry, rank) => {
+            const r = entry.room;
+            const crop = CROPS[r.cropId] || {};
+            const m = metricForOrder(r, orderKey);
+            let badgeCls, badgeLbl, subLine;
+            if (isEthyleneSort) {
+              const sug = shipSuggestion(rank, ranked.length);
+              badgeCls = sug.cls; badgeLbl = sug.label; subLine = sug.sub;
+            } else {
+              badgeCls = r.attentionReason ? 'crit' : (r.atmosOn ? 'ok' : 'warn');
+              badgeLbl = r.attentionReason ? 'NEEDS ATTENTION' : (r.atmosOn ? 'AT OPTIMAL' : 'OPERATIONAL');
+              subLine = '';
+            }
             return `
-              <div class="ship-row" data-id="${escHtml(r.room.id)}">
+              <div class="ship-row" data-id="${escHtml(r.id)}">
                 <div class="ship-rank">#${rank + 1}</div>
                 <div class="ship-info">
-                  <div class="ship-name">Room ${r.origIdx + 1} · ${escHtml(r.room.name)}</div>
+                  <div class="ship-name">Room ${entry.origIdx + 1} · ${escHtml(r.name)}</div>
                   <div class="ship-crop">${escHtml(crop.displayName || '')}</div>
                 </div>
                 <div class="ship-ethy">
-                  <div class="ship-ethy-val">${r.natEthy.toFixed(2)}</div>
-                  <div class="ship-ethy-lbl">ppm natural</div>
+                  <div class="ship-ethy-val">${escHtml(m.value)}</div>
+                  ${m.unit ? `<div class="ship-ethy-lbl">${escHtml(m.unit)}</div>` : ''}
                 </div>
                 <div class="ship-suggest">
-                  <span class="badge ${sug.cls}">${sug.label}</span>
-                  <div class="ship-suggest-sub">${sug.sub}</div>
+                  <span class="badge ${badgeCls}">${escHtml(badgeLbl)}</span>
+                  ${subLine ? `<div class="ship-suggest-sub">${escHtml(subLine)}</div>` : ''}
                 </div>
               </div>
             `;
