@@ -281,6 +281,26 @@
     .intg-stats { grid-template-columns: repeat(2, 1fr); }
   }
 
+  /* === SMS CRITICAL ALERTS CARD === */
+  .intg-sms { margin: 4px 22px 12px; padding: 14px 16px; background: #f7faf7; border: 1.5px solid #c8d8c4; border-radius: 10px; }
+  .intg-sms.connected { border-color: #2e7d32; background: #f0f7f0; }
+  .intg-sms .sms-head { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; margin-bottom: 12px; }
+  .intg-sms .sms-icon { font-size: 22px; }
+  .intg-sms .sms-title { font-size: 14px; font-weight: 700; color: #1a1a1a; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .intg-sms .sms-title .pill-ok { background: #2e7d32; color: white; font-size: 9px; padding: 2px 7px; border-radius: 6px; letter-spacing: 0.6px; font-weight: 700; }
+  .intg-sms .sms-desc { font-size: 11px; color: #666; margin-top: 3px; line-height: 1.4; }
+  .intg-sms .sms-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+  .intg-sms .sms-row input { padding: 9px 12px; border-radius: 8px; border: 1.5px solid #c8d8c4; font-size: 14px; background: white; color: #1a1a1a; outline: none; transition: border-color 0.15s; }
+  .intg-sms .sms-row input:focus { border-color: #2e7d32; }
+  .intg-sms .sms-row .sms-btn { padding: 9px 16px; border-radius: 8px; border: none; font-weight: 700; font-size: 12px; cursor: pointer; letter-spacing: 0.4px; }
+  .intg-sms .sms-row .sms-btn.save { background: #2e7d32; color: white; }
+  .intg-sms .sms-row .sms-btn.save:hover { background: #1a6b1a; }
+  .intg-sms .sms-current { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .intg-sms .sms-current .num { font-size: 15px; font-weight: 700; color: #1a6b1a; font-family: ui-monospace, SFMono-Regular, monospace; }
+  .intg-sms .sms-current .since { font-size: 10px; color: #1a6b1a; letter-spacing: 0.4px; font-weight: 600; }
+  .intg-sms .sms-current .remove { padding: 6px 12px; border-radius: 14px; border: 1.5px solid #f5cccc; background: #fff5f4; color: #c0392b; font-size: 11px; font-weight: 700; cursor: pointer; margin-left: auto; }
+  .intg-sms .sms-current .remove:hover { background: #c0392b; color: white; border-color: #c0392b; }
+
   /* === SHIPPING PRIORITY === */
   .ship-btn { background: white; color: #2e7d32; border: 1.5px solid #2e7d32; padding: 7px 14px; border-radius: 18px; cursor: pointer; font-size: 12px; font-weight: 700; transition: background 0.15s, color 0.15s; }
   .ship-btn:hover { background: #2e7d32; color: white; }
@@ -576,6 +596,8 @@ const DEFAULT_STATE = {
   shippingPanelOpen: false,
   integrationsPanelOpen: false,
   integrationsState: null,
+  smsPhone: '',
+  _smsDraft: '',
   history: [],
   historyIdx: -1
 };
@@ -1676,6 +1698,71 @@ function getIntegrationsState() {
   return state.integrationsState;
 }
 
+function maskPhone(p) {
+  if (!p) return '';
+  const digits = p.replace(/\D/g, '');
+  if (digits.length < 5) return p;
+  // Keep first 2 chars and last 4 visible, mask middle
+  const last4 = digits.slice(-4);
+  const first2 = digits.slice(0, 2);
+  return `+${first2} ••• ••• ${last4}`;
+}
+
+function renderSmsCard() {
+  const phone = state.smsPhone || '';
+  const connected = !!phone;
+  return `
+    <div class="intg-sms ${connected ? 'connected' : ''}">
+      <div class="sms-head">
+        <span class="sms-icon">📱</span>
+        <div>
+          <div class="sms-title">SMS critical alerts ${connected ? '<span class="pill-ok">ACTIVE</span>' : ''}</div>
+          <div class="sms-desc">Get a text the moment a room goes critical, Atmos shuts off, or a sensor disconnects. Carrier rates apply.</div>
+        </div>
+      </div>
+      ${connected ? `
+        <div class="sms-current">
+          <span class="num">${escHtml(maskPhone(phone))}</span>
+          <span class="since">✓ 99.9% delivery · last test 2h ago</span>
+          <button class="remove" id="sms-remove">Remove</button>
+        </div>
+      ` : `
+        <div class="sms-row">
+          <input id="sms-input" type="tel" inputmode="tel" placeholder="+1 555 123 4567" value="${escHtml(state._smsDraft || '')}" autocomplete="tel">
+          <button class="sms-btn save" id="sms-save">Save number</button>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function wireSmsCard() {
+  const inp = document.getElementById('sms-input');
+  if (inp) {
+    inp.oninput = (e) => { state._smsDraft = e.target.value; saveState(); };
+    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('sms-save').click(); } };
+    inp.focus();
+    inp.setSelectionRange(inp.value.length, inp.value.length);
+  }
+  const save = document.getElementById('sms-save');
+  if (save) save.onclick = () => {
+    const v = (document.getElementById('sms-input').value || '').trim();
+    const digits = v.replace(/\D/g, '');
+    if (digits.length < 7) { alert('Enter a valid phone number (at least 7 digits)'); return; }
+    state.smsPhone = v;
+    state._smsDraft = '';
+    saveState();
+    render();
+  };
+  const rm = document.getElementById('sms-remove');
+  if (rm) rm.onclick = () => {
+    if (!confirm('Remove SMS alerts? You won\'t get texts on critical events.')) return;
+    state.smsPhone = '';
+    saveState();
+    render();
+  };
+}
+
 function renderIntegrationsPanel() {
   const s = getIntegrationsState();
   const connectedCount = INTEGRATIONS.filter(it => s[it.id]).length;
@@ -1712,6 +1799,8 @@ function renderIntegrationsPanel() {
           <div class="intg-stat"><div class="v">1,247</div><div class="l">Webhook calls · 24h</div></div>
           <div class="intg-stat"><div class="v">42 ms</div><div class="l">p50 latency</div></div>
         </div>
+        <div class="intg-section">Critical alerts</div>
+        ${renderSmsCard()}
         ${connected.length ? `
           <div class="intg-section">Connected (${connected.length})</div>
           <div class="intg-grid">${connected.map(card).join('')}</div>
@@ -1733,6 +1822,7 @@ function wireIntegrationsPanel() {
     e.stopPropagation();
     state.integrationsPanelOpen = false; saveState(); render();
   };
+  wireSmsCard();
   document.querySelectorAll('[data-toggle]').forEach(btn => {
     btn.onclick = (e) => {
       e.stopPropagation();
