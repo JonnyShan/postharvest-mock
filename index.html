@@ -110,6 +110,35 @@
 
   #map-container { width: 100%; height: 460px; border-radius: 12px; }
   .leaflet-container { font-family: 'Segoe UI', sans-serif; }
+  .room-pin-inner { width: 30px; height: 30px; border-radius: 50%; background: #ff9800; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor: pointer; }
+  .room-pin-inner.on { background: #2e7d32; }
+  .room-pin-inner.crit { background: #c0392b; }
+
+  /* === NOTIFICATIONS === */
+  .bell-btn { background: rgba(255,255,255,0.15); color: white; border: none; padding: 6px 10px; border-radius: 16px; cursor: pointer; position: relative; font-size: 14px; }
+  .bell-btn:hover { background: rgba(255,255,255,0.25); }
+  .bell-badge { position: absolute; top: -4px; right: -4px; background: #ff5722; color: white; font-size: 9px; padding: 2px 5px; border-radius: 8px; font-weight: 700; min-width: 16px; text-align: center; }
+  .notif-overlay { position: fixed; inset: 0; z-index: 999; }
+  .notif-panel { position: absolute; top: 56px; right: 24px; background: white; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.3); width: 380px; max-height: 480px; overflow: hidden; z-index: 1000; display: flex; flex-direction: column; }
+  .notif-header { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #1a1a1a; flex: 0 0 auto; }
+  .notif-header .clear { background: transparent; border: none; color: #2e7d32; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .notif-list { padding: 4px 0; overflow-y: auto; flex: 1 1 auto; }
+  .notif-empty { padding: 30px 16px; text-align: center; color: #888; font-size: 13px; }
+  .notif-item { padding: 12px 16px; border-bottom: 1px solid #f5f5f5; }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-item:hover { background: #fafafa; }
+  .notif-time { font-size: 10px; color: #888; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600; }
+  .notif-room { font-size: 13px; font-weight: 700; color: #1a1a1a; margin-top: 2px; }
+  .notif-issue { font-size: 12px; font-weight: 600; margin-top: 4px; }
+  .notif-issue.ok { color: #1a6b1a; }
+  .notif-issue.warn { color: #b87800; }
+  .notif-issue.crit { color: #c0392b; }
+  .notif-cause { font-size: 12px; color: #666; margin-top: 2px; line-height: 1.4; }
+
+  /* === ATMOS ALL === */
+  .atmos-all-btn { background: #1a6b1a; color: white; border: none; padding: 8px 14px; border-radius: 18px; cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+  .atmos-all-btn.off { background: #c0392b; }
+  .atmos-all-btn:hover { filter: brightness(1.08); }
 
   /* === ROOM === */
   .tabs-row { background: white; padding: 0 24px; display: flex; align-items: center; border-bottom: 1px solid #e0e0e0; gap: 4px; }
@@ -190,13 +219,25 @@ const COMPANIES = [
     matchKeys: ['rockit'],
     displayName: 'Rockit Apple',
     hq: 'Hastings, Hawke\'s Bay, NZ',
-    lat: -39.6396, lng: 176.8420,
-    rooms: [
-      { name: 'Rockit Room 1', address: '96 Kings Road, Whakatu, Hastings', lat: -39.6068, lng: 176.8893, cropId: 'apple-rockit' },
-      { name: 'Rockit Room 2', address: '96 Kings Road, Whakatu, Hastings', lat: -39.6072, lng: 176.8895, cropId: 'apple-rockit' },
-      { name: 'Rockit Room 3', address: '96 Kings Road, Whakatu, Hastings', lat: -39.6065, lng: 176.8889, cropId: 'apple-rockit' },
-      { name: 'Rockit Room 4', address: '96 Kings Road, Whakatu, Hastings', lat: -39.6070, lng: 176.8898, cropId: 'apple-rockit' }
-    ]
+    lat: -39.6068, lng: 176.8893,
+    rooms: (() => {
+      const rooms = [];
+      const baseLat = -39.6068, baseLng = 176.8893;
+      // 5 columns × 4 rows = 20 rooms, spread ~0.0008 deg (~80m) per cell
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 5; c++) {
+          const idx = r * 5 + c + 1;
+          rooms.push({
+            name: 'Rockit Room ' + idx,
+            address: '96 Kings Road, Whakatu Cold Stores, Hastings',
+            lat: baseLat + (r - 1.5) * 0.0008,
+            lng: baseLng + (c - 2) * 0.0010,
+            cropId: 'apple-rockit'
+          });
+        }
+      }
+      return rooms;
+    })()
   },
   {
     matchKeys: ['tru cape', 'trucape', 'tru-cape'],
@@ -288,6 +329,56 @@ function cropOptions(query) {
   return all.filter(c => c.displayName.toLowerCase().includes(q)).slice(0, 8);
 }
 
+// === NOTIFICATIONS ===
+const NOTIFICATION_TEMPLATES = [
+  { issue: 'Ethylene up & Oxygen up',  cause: 'Doors likely open too long — check seals',                    severity: 'warn' },
+  { issue: 'Temperature drift',         cause: 'Refrigeration cycle longer than usual — schedule inspection', severity: 'warn' },
+  { issue: 'CO₂ spike',                 cause: 'Respiratory peak — fruit ripening accelerated',              severity: 'warn' },
+  { issue: 'Humidity dropped',          cause: 'Atmos rebalancing humidifiers — auto-corrected',             severity: 'ok'   },
+  { issue: 'Atmos engaged',             cause: 'All 5 factors back to optimal',                              severity: 'ok'   },
+  { issue: 'Pressure low',              cause: 'Door seal check recommended — minor leak detected',          severity: 'warn' },
+  { issue: 'Ethylene scrubber active',  cause: 'Auto-triggered — reading back below 0.1 ppm',                severity: 'ok'   },
+  { issue: 'Oxygen high',               cause: 'CA system flushing — restoring 1.5–2% target',                severity: 'warn' },
+  { issue: 'Door opened',               cause: 'Forklift access logged at gate 3 — 4 min duration',          severity: 'ok'   },
+  { issue: 'Atmos disengaged',          cause: 'Manual override — operator A. Smith',                        severity: 'warn' },
+  { issue: 'Critical: Ethylene 5×',     cause: 'Possible respiratory bloom — investigate immediately',       severity: 'crit' },
+  { issue: 'Power dip recovered',       cause: 'Backup kicked in for 12 sec — no sensor data lost',          severity: 'ok'   }
+];
+
+function makeNotifications(rooms) {
+  const out = [];
+  const now = Date.now();
+  const count = Math.min(12, Math.max(6, Math.floor(rooms.length * 0.5)));
+  for (let i = 0; i < count; i++) {
+    const tmpl = NOTIFICATION_TEMPLATES[Math.floor(Math.random() * NOTIFICATION_TEMPLATES.length)];
+    const room = rooms[Math.floor(Math.random() * rooms.length)];
+    // distribute timestamps across last 6 hours, with bias toward recent
+    const minsAgo = Math.floor(Math.pow(Math.random(), 1.5) * 360);
+    out.push({
+      id: 'n_' + Math.random().toString(36).slice(2, 9),
+      ts: now - minsAgo * 60 * 1000,
+      roomId: room.id,
+      roomName: room.name,
+      issue: tmpl.issue,
+      cause: tmpl.cause,
+      severity: tmpl.severity
+    });
+  }
+  out.sort((a, b) => b.ts - a.ts);
+  return out;
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + ' min ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + ' hr ago';
+  const d = Math.floor(h / 24);
+  return d + ' days ago';
+}
+
 // === STATE ===
 const STORAGE_KEY = 'pht-mock-state-v1';
 
@@ -297,7 +388,9 @@ const DEFAULT_STATE = {
   dashboardView: 'map',
   currentRoomId: null,
   aiInput: '',
-  wizardDraft: { name: '', hq: '', rooms: [] }
+  wizardDraft: { name: '', hq: '', rooms: [] },
+  notifications: [],
+  notifPanelOpen: false
 };
 
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -569,6 +662,7 @@ function acceptAiMatch(matched) {
       atmosOn: false
     }))
   };
+  state.notifications = makeNotifications(state.facility.rooms);
   state._aiPhase = null;
   state._aiMatched = null;
   state.aiInput = '';
@@ -758,6 +852,7 @@ function renderWizardStep2(app) {
       lng: hqLL.lng,
       rooms: state.wizardDraft.rooms.map(r => ({ ...r, atmosOn: r.atmosOn || false }))
     };
+    state.notifications = makeNotifications(state.facility.rooms);
     state.wizardDraft = { name: '', hq: '', rooms: [] };
     state._newRoom = { name: '', address: '', cropId: null, cropDisplay: '' };
     state._cropQuery = '';
@@ -803,6 +898,10 @@ function renderDashboard(app) {
   const facility = state.facility;
   if (!facility) { setView('splash'); return; }
 
+  const allOn = facility.rooms.length > 0 && facility.rooms.every(r => r.atmosOn);
+  const notifs = state.notifications || [];
+  const notifCount = notifs.length;
+
   app.innerHTML = `
     <div class="frame">
       <div class="dash">
@@ -817,6 +916,7 @@ function renderDashboard(app) {
           </div>
           <div class="user">
             <button class="reset" id="reset-btn">Reset Demo</button>
+            <button class="bell-btn" id="bell-btn" title="Notifications">🔔${notifCount > 0 ? `<span class="bell-badge">${notifCount}</span>` : ''}</button>
             <span>${escHtml((facility.name || 'demo').slice(0, 20))}</span>
             <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;">👤</div>
           </div>
@@ -828,6 +928,7 @@ function renderDashboard(app) {
             <div class="hq">${escHtml(facility.hq)} · ${facility.rooms.length} cool-rooms</div>
           </div>
           <div class="actions">
+            <button class="atmos-all-btn ${allOn ? 'off' : ''}" id="atmos-all">${allOn ? '⏻ Atmos All OFF' : '⏻ Atmos All ON'}</button>
             <div class="toggle">
               <button id="t-map" class="${state.dashboardView === 'map' ? 'active' : ''}">Map</button>
               <button id="t-grid" class="${state.dashboardView === 'grid' ? 'active' : ''}">Grid</button>
@@ -839,13 +940,13 @@ function renderDashboard(app) {
         <div class="fac-body">
           ${state.dashboardView === 'grid' ? `
             <div class="grid-tiles">
-              ${facility.rooms.map(r => {
+              ${facility.rooms.map((r, i) => {
                 const crop = CROPS[r.cropId] || { displayName: '(unknown)' };
                 const ethy = roomEthylene(r);
                 const status = r.atmosOn ? 'ok' : 'warn';
                 return `
                   <div class="tile" data-id="${escHtml(r.id)}">
-                    <h4>${escHtml(r.name)}</h4>
+                    <h4>#${i + 1} · ${escHtml(r.name)}</h4>
                     <div class="crop">${escHtml(crop.displayName)}</div>
                     <div class="ethy">${ethy.toFixed(3)} <small>ppm</small></div>
                     <span class="badge ${status}">${r.atmosOn ? 'At optimal' : 'Operational'}</span>
@@ -860,20 +961,36 @@ function renderDashboard(app) {
         </div>
       </div>
     </div>
+    ${state.notifPanelOpen ? renderNotifPanel(notifs) : ''}
   `;
 
   document.getElementById('reset-btn').onclick = () => { if (confirm('Reset demo to splash?')) resetState(); };
-  document.getElementById('t-map').onclick = () => { state.dashboardView = 'map'; saveState(); render(); };
-  document.getElementById('t-grid').onclick = () => { state.dashboardView = 'grid'; saveState(); render(); };
+  document.getElementById('t-map').onclick = () => { state.dashboardView = 'map'; state.notifPanelOpen = false; saveState(); render(); };
+  document.getElementById('t-grid').onclick = () => { state.dashboardView = 'grid'; state.notifPanelOpen = false; saveState(); render(); };
   document.getElementById('add-room').onclick = () => {
     state.wizardDraft = { name: facility.name, hq: facility.hq, rooms: facility.rooms.map(r => ({ ...r })) };
+    state.notifPanelOpen = false;
     setView('wizard-step2');
   };
+  document.getElementById('atmos-all').onclick = () => {
+    const target = !allOn;
+    facility.rooms.forEach(r => { r.atmosOn = target; });
+    saveState();
+    render();
+  };
+  document.getElementById('bell-btn').onclick = (e) => {
+    e.stopPropagation();
+    state.notifPanelOpen = !state.notifPanelOpen;
+    render();
+  };
+
+  if (state.notifPanelOpen) wireNotifPanel(facility);
 
   if (state.dashboardView === 'grid') {
     document.querySelectorAll('.tile').forEach(el => {
       el.onclick = () => {
         state.currentRoomId = el.dataset.id;
+        state.notifPanelOpen = false;
         setView('room');
       };
     });
@@ -882,6 +999,51 @@ function renderDashboard(app) {
   if (state.dashboardView === 'map') {
     setTimeout(() => initFacilityMap(facility), 0);
   }
+}
+
+function renderNotifPanel(notifs) {
+  return `
+    <div class="notif-overlay" id="notif-overlay">
+      <div class="notif-panel" id="notif-panel">
+        <div class="notif-header">
+          <span>Notifications · ${notifs.length}</span>
+          <button class="clear" id="notif-clear">Clear all</button>
+        </div>
+        <div class="notif-list">
+          ${notifs.length === 0 ? '<div class="notif-empty">No notifications.</div>' : ''}
+          ${notifs.map(n => `
+            <div class="notif-item" data-room-id="${escHtml(n.roomId || '')}" data-id="${escHtml(n.id)}">
+              <div class="notif-time">${escHtml(timeAgo(n.ts))}</div>
+              <div class="notif-room">${escHtml(n.roomName)}</div>
+              <div class="notif-issue ${escHtml(n.severity)}">${escHtml(n.issue)}</div>
+              <div class="notif-cause">${escHtml(n.cause)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function wireNotifPanel(facility) {
+  const overlay = document.getElementById('notif-overlay');
+  const panel = document.getElementById('notif-panel');
+  if (overlay) overlay.onclick = (e) => {
+    if (e.target === overlay) { state.notifPanelOpen = false; render(); }
+  };
+  if (panel) panel.onclick = (e) => e.stopPropagation();
+  const clear = document.getElementById('notif-clear');
+  if (clear) clear.onclick = () => { state.notifications = []; saveState(); render(); };
+  document.querySelectorAll('.notif-item').forEach(el => {
+    el.onclick = () => {
+      const rid = el.dataset.roomId;
+      if (rid && facility.rooms.some(r => r.id === rid)) {
+        state.currentRoomId = rid;
+        state.notifPanelOpen = false;
+        setView('room');
+      }
+    };
+  });
 }
 
 function initFacilityMap(facility) {
@@ -894,22 +1056,23 @@ function initFacilityMap(facility) {
     attribution: '© OpenStreetMap'
   }).addTo(_leafletMap);
 
-  facility.rooms.forEach(room => {
+  facility.rooms.forEach((room, i) => {
     const crop = CROPS[room.cropId] || { displayName: '(unknown)' };
     const ethy = roomEthylene(room);
-    const color = room.atmosOn ? '#2e7d32' : '#ff9800';
-    const marker = L.circleMarker([room.lat, room.lng], {
-      radius: 10,
-      fillColor: color,
-      color: '#fff',
-      weight: 2,
-      fillOpacity: 0.9
-    }).addTo(_leafletMap);
+    const number = i + 1;
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="room-pin-inner ${room.atmosOn ? 'on' : 'off'}">${number}</div>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    });
+    const marker = L.marker([room.lat, room.lng], { icon }).addTo(_leafletMap);
     marker.bindPopup(`
       <div style="font-family:'Segoe UI',sans-serif;font-size:13px;min-width:180px;">
-        <strong>${escHtml(room.name)}</strong><br>
+        <strong>#${number} · ${escHtml(room.name)}</strong><br>
         ${escHtml(crop.displayName)}<br>
         <span style="color:#888;">Ethylene: ${ethy.toFixed(3)} ppm</span><br>
+        <span style="color:#888;">Atmos: ${room.atmosOn ? 'ON ✓' : 'OFF'}</span><br>
         <a href="#" data-open-room="${escHtml(room.id)}">Open room →</a>
       </div>
     `);
