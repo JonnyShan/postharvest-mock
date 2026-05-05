@@ -136,7 +136,8 @@
   .bar-row { display: grid; grid-template-columns: 110px 1fr 90px; gap: 12px; align-items: center; padding: 10px 0; }
   .bar-row .lbl { font-size: 11px; color: #888; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600; }
   .bar-track { background: #f0f0f0; height: 14px; border-radius: 7px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 7px; transition: width 1.2s cubic-bezier(.2,.7,.3,1), background 1.2s; }
+  .bar-fill { height: 100%; border-radius: 7px; transition: width 3s cubic-bezier(.2,.7,.3,1), background 3s ease; }
+  .bar-fill.fast { transition: width 1s cubic-bezier(.2,.7,.3,1), background 1s ease; }
   .bar-row .target { font-size: 11px; color: #888; text-align: right; }
   .stat-card { background: white; border-radius: 10px; padding: 16px; }
   .stat-card .ethy-big { font-size: 36px; font-weight: 700; color: #1a1a1a; line-height: 1; margin-top: 6px; }
@@ -188,67 +189,67 @@ const COMPANIES = [
   {
     matchKeys: ['rockit'],
     displayName: 'Rockit Apple',
-    hq: "Hawke's Bay, NZ",
-    lat: -39.49, lng: 176.91,
+    hq: 'Hastings, Hawke\'s Bay, NZ',
+    lat: -39.6396, lng: 176.8420,
     rooms: [
-      { name: 'Rockit Room 1', address: '12 Apple Way, Hastings', lat: -39.49, lng: 176.91, cropId: 'apple-rockit' },
-      { name: 'Rockit Room 2', address: '12 Apple Way, Hastings', lat: -39.50, lng: 176.92, cropId: 'apple-rockit' },
-      { name: 'Rockit Room 3', address: '14 Apple Way, Hastings', lat: -39.48, lng: 176.93, cropId: 'apple-rockit' },
-      { name: 'Rockit Room 4', address: '14 Apple Way, Hastings', lat: -39.49, lng: 176.93, cropId: 'apple-rockit' }
+      { name: 'Rockit Room 1', address: '96 Kings Road, Whakatu, Hastings', lat: -39.6068, lng: 176.8893, cropId: 'apple-rockit' },
+      { name: 'Rockit Room 2', address: '96 Kings Road, Whakatu, Hastings', lat: -39.6072, lng: 176.8895, cropId: 'apple-rockit' },
+      { name: 'Rockit Room 3', address: '96 Kings Road, Whakatu, Hastings', lat: -39.6065, lng: 176.8889, cropId: 'apple-rockit' },
+      { name: 'Rockit Room 4', address: '96 Kings Road, Whakatu, Hastings', lat: -39.6070, lng: 176.8898, cropId: 'apple-rockit' }
     ]
   },
   {
     matchKeys: ['tru cape', 'trucape', 'tru-cape'],
     displayName: 'Tru Cape',
-    hq: 'Ceres, South Africa',
-    lat: -33.37, lng: 19.31,
+    hq: 'Ceres, Western Cape, South Africa',
+    lat: -33.3742, lng: 19.3082,
     rooms: [
-      { name: 'Ceres CA-1',  address: 'Ceres Pack Hub',  lat: -33.37, lng: 19.31, cropId: 'apple-gala' },
-      { name: 'Ceres CA-2',  address: 'Ceres Pack Hub',  lat: -33.38, lng: 19.32, cropId: 'apple-gala' },
-      { name: 'Ceres CA-3',  address: 'Ceres Pack Hub',  lat: -33.36, lng: 19.30, cropId: 'apple-granny' },
-      { name: 'Ceres CA-4',  address: 'Ceres Pack Hub',  lat: -33.37, lng: 19.30, cropId: 'apple-granny' },
-      { name: 'Pear Room A', address: 'Ceres Pack Hub',  lat: -33.38, lng: 19.31, cropId: 'pear-bosc' },
-      { name: 'Pear Room B', address: 'Ceres Pack Hub',  lat: -33.36, lng: 19.32, cropId: 'pear-bosc' }
+      { name: 'Ceres CA-1',  address: '1 Pomona Industrial, Ceres', lat: -33.3742, lng: 19.3082, cropId: 'apple-gala' },
+      { name: 'Ceres CA-2',  address: '1 Pomona Industrial, Ceres', lat: -33.3745, lng: 19.3085, cropId: 'apple-gala' },
+      { name: 'Ceres CA-3',  address: '1 Pomona Industrial, Ceres', lat: -33.3739, lng: 19.3079, cropId: 'apple-granny' },
+      { name: 'Ceres CA-4',  address: '1 Pomona Industrial, Ceres', lat: -33.3743, lng: 19.3078, cropId: 'apple-granny' },
+      { name: 'Pear Room A', address: '1 Pomona Industrial, Ceres', lat: -33.3740, lng: 19.3084, cropId: 'pear-bosc' },
+      { name: 'Pear Room B', address: '1 Pomona Industrial, Ceres', lat: -33.3744, lng: 19.3083, cropId: 'pear-bosc' }
     ]
   },
   {
     matchKeys: ['calypso'],
     displayName: 'Calypso Mango',
     hq: 'Bowen, QLD AU',
-    lat: -20.02, lng: 148.24,
+    lat: -20.0220, lng: 148.2240,
     rooms: [
-      { name: 'Bowen Mango 1', address: 'Bowen Packshed', lat: -20.02, lng: 148.24, cropId: 'mango-calypso' },
-      { name: 'Bowen Mango 2', address: 'Bowen Packshed', lat: -20.03, lng: 148.25, cropId: 'mango-calypso' },
-      { name: 'Bowen Mango 3', address: 'Bowen Packshed', lat: -20.01, lng: 148.23, cropId: 'mango-calypso' }
+      { name: 'Bowen Pack 1', address: 'Don Road, Bowen QLD', lat: -20.0220, lng: 148.2240, cropId: 'mango-calypso' },
+      { name: 'Bowen Pack 2', address: 'Don Road, Bowen QLD', lat: -20.0223, lng: 148.2243, cropId: 'mango-calypso' },
+      { name: 'Bowen Pack 3', address: 'Don Road, Bowen QLD', lat: -20.0217, lng: 148.2237, cropId: 'mango-calypso' }
     ]
   },
   {
     matchKeys: ['costa'],
     displayName: 'Costa Group',
-    hq: 'Mildura, VIC AU',
-    lat: -34.21, lng: 142.13,
+    hq: 'Ravenhall, VIC AU',
+    lat: -37.7681, lng: 144.7475,
     rooms: [
-      { name: 'Mildura Citrus 1',  address: 'Mildura Hub',     lat: -34.21, lng: 142.13, cropId: 'orange-navel' },
-      { name: 'Mildura Citrus 2',  address: 'Mildura Hub',     lat: -34.22, lng: 142.14, cropId: 'orange-navel' },
-      { name: 'Berry Room',        address: 'Corindi NSW',     lat: -30.04, lng: 153.21, cropId: 'blueberry' },
-      { name: 'Avocado Room',      address: 'Atherton QLD',    lat: -17.27, lng: 145.48, cropId: 'avocado-hass' },
-      { name: 'Avocado Room 2',    address: 'Atherton QLD',    lat: -17.27, lng: 145.49, cropId: 'avocado-hass' }
+      { name: 'Mildura Citrus 1',  address: 'Karadoc, Mildura',     lat: -34.2660, lng: 142.2030, cropId: 'orange-navel' },
+      { name: 'Mildura Citrus 2',  address: 'Karadoc, Mildura',     lat: -34.2663, lng: 142.2033, cropId: 'orange-navel' },
+      { name: 'Berry Room',        address: 'Corindi Beach NSW',    lat: -30.0418, lng: 153.1850, cropId: 'blueberry' },
+      { name: 'Avocado Room',      address: 'Walkamin QLD',         lat: -17.1311, lng: 145.4378, cropId: 'avocado-hass' },
+      { name: 'Avocado Room 2',    address: 'Walkamin QLD',         lat: -17.1314, lng: 145.4381, cropId: 'avocado-hass' }
     ]
   },
   {
     matchKeys: ['driscoll'],
     displayName: "Driscoll's",
     hq: 'Watsonville, CA US',
-    lat: 36.91, lng: -121.76,
+    lat: 36.9220, lng: -121.7714,
     rooms: [
-      { name: 'Watsonville Strawberry 1', address: 'Watsonville Cooler', lat: 36.91, lng: -121.76, cropId: 'strawberry' },
-      { name: 'Watsonville Strawberry 2', address: 'Watsonville Cooler', lat: 36.92, lng: -121.77, cropId: 'strawberry' },
-      { name: 'Watsonville Raspberry',    address: 'Watsonville Cooler', lat: 36.91, lng: -121.75, cropId: 'raspberry' },
-      { name: 'Watsonville Blueberry',    address: 'Watsonville Cooler', lat: 36.92, lng: -121.75, cropId: 'blueberry' },
-      { name: 'Watsonville Blackberry',   address: 'Watsonville Cooler', lat: 36.90, lng: -121.76, cropId: 'blackberry' },
-      { name: 'Oxnard Strawberry',        address: 'Oxnard Cooler',      lat: 34.20, lng: -119.18, cropId: 'strawberry' },
-      { name: 'Oxnard Raspberry',         address: 'Oxnard Cooler',      lat: 34.21, lng: -119.19, cropId: 'raspberry' },
-      { name: 'Oxnard Blueberry',         address: 'Oxnard Cooler',      lat: 34.21, lng: -119.18, cropId: 'blueberry' }
+      { name: 'Watsonville Strawberry 1', address: '345 Westridge Dr, Watsonville', lat: 36.9220, lng: -121.7714, cropId: 'strawberry' },
+      { name: 'Watsonville Strawberry 2', address: '345 Westridge Dr, Watsonville', lat: 36.9223, lng: -121.7717, cropId: 'strawberry' },
+      { name: 'Watsonville Raspberry',    address: '345 Westridge Dr, Watsonville', lat: 36.9217, lng: -121.7711, cropId: 'raspberry' },
+      { name: 'Watsonville Blueberry',    address: '345 Westridge Dr, Watsonville', lat: 36.9222, lng: -121.7710, cropId: 'blueberry' },
+      { name: 'Watsonville Blackberry',   address: '345 Westridge Dr, Watsonville', lat: 36.9218, lng: -121.7716, cropId: 'blackberry' },
+      { name: 'Oxnard Strawberry',        address: '1840 Eastman Ave, Oxnard',      lat: 34.2010, lng: -119.1766, cropId: 'strawberry' },
+      { name: 'Oxnard Raspberry',         address: '1840 Eastman Ave, Oxnard',      lat: 34.2013, lng: -119.1769, cropId: 'raspberry' },
+      { name: 'Oxnard Blueberry',         address: '1840 Eastman Ave, Oxnard',      lat: 34.2007, lng: -119.1763, cropId: 'blueberry' }
     ]
   }
 ];
@@ -438,10 +439,12 @@ function renderAiLookup(app) {
       <p class="hint">Enter your company name. We'll search the web for cool-room locations, crops stored, and facility details.</p>
       ${phase === 'input' ? `
         <div class="ai-input-row">
-          <input class="ai-input" id="ai-input" placeholder="e.g. Rockit Apple" value="${escHtml(state.aiInput || '')}">
+          <div style="flex:1; position: relative;">
+            <input class="ai-input" id="ai-input" placeholder="Enter your company name" value="${escHtml(state.aiInput || '')}" autocomplete="off">
+            <div id="ai-suggestions" class="crop-suggestions" style="display:none;"></div>
+          </div>
           <button class="btn btn-primary" id="ai-submit">Search</button>
         </div>
-        <div style="margin-top: 8px; color: #888; font-size: 12px;">Try: <em>Rockit, Tru Cape, Calypso, Costa, Driscoll</em></div>
         <button class="btn btn-link" id="ai-back" style="margin-top: 12px;">← Back</button>
       ` : ''}
       ${phase === 'searching' ? `
@@ -479,9 +482,36 @@ function renderAiLookup(app) {
 
   if (phase === 'input') {
     const input = document.getElementById('ai-input');
+    const sugDiv = document.getElementById('ai-suggestions');
+    function refreshSuggestions(q) {
+      if (!q || q.length < 1) { sugDiv.style.display = 'none'; sugDiv.innerHTML = ''; return; }
+      const lower = q.toLowerCase();
+      const matches = COMPANIES.filter(c =>
+        c.matchKeys.some(k => k.startsWith(lower) || lower.startsWith(k)) ||
+        c.displayName.toLowerCase().includes(lower)
+      );
+      if (matches.length === 0) { sugDiv.style.display = 'none'; return; }
+      sugDiv.style.display = 'block';
+      sugDiv.innerHTML = matches.map(c =>
+        `<div class="item" data-name="${escHtml(c.displayName)}">${escHtml(c.displayName)}</div>`
+      ).join('');
+      sugDiv.querySelectorAll('.item').forEach(el => {
+        el.onmousedown = (ev) => {
+          ev.preventDefault();
+          input.value = el.dataset.name;
+          state.aiInput = el.dataset.name;
+          saveState();
+          sugDiv.style.display = 'none';
+          input.focus();
+        };
+      });
+    }
     input.focus();
-    input.oninput = (e) => { state.aiInput = e.target.value; saveState(); };
-    input.onkeydown = (e) => { if (e.key === 'Enter') document.getElementById('ai-submit').click(); };
+    input.setSelectionRange(input.value.length, input.value.length);
+    refreshSuggestions(input.value);
+    input.oninput = (e) => { state.aiInput = e.target.value; saveState(); refreshSuggestions(e.target.value); };
+    input.onkeydown = (e) => { if (e.key === 'Enter') { sugDiv.style.display = 'none'; document.getElementById('ai-submit').click(); } };
+    input.onblur = () => setTimeout(() => { sugDiv.style.display = 'none'; }, 150);
     document.getElementById('ai-submit').onclick = startAiSearch;
     document.getElementById('ai-back').onclick = () => { state.aiInput = ''; setView('splash'); };
   }
@@ -997,10 +1027,100 @@ function renderRoom(app) {
   document.getElementById('back-to-fac').onclick = () => { state.currentRoomId = null; setView('dashboard'); };
   document.querySelectorAll('[data-stub]').forEach(el => el.onclick = () => alert('"' + el.textContent + '" tab — coming soon'));
   document.getElementById('atmos-toggle').onclick = () => {
-    room.atmosOn = !room.atmosOn;
-    saveState();
-    render();
+    if (_atmosAnimating) return;
+    animateAtmosToggle(room);
   };
+}
+
+// === ATMOS TOGGLE ANIMATION ===
+let _atmosAnimating = false;
+
+function animateAtmosToggle(room) {
+  _atmosAnimating = true;
+  const startFills = computeBarFills(room); // current (pre-toggle) state
+  const startEthy = parseFloat(startFills.ethylene.value);
+  const startHum = parseFloat(startFills.hum.value);
+  const startTemp = parseFloat(startFills.temp.value);
+  const startPres = parseFloat(startFills.pres.value);
+  const startO2 = parseFloat(startFills.o2.value);
+
+  // Flip state
+  room.atmosOn = !room.atmosOn;
+  saveState();
+
+  const endFills = computeBarFills(room); // target state
+  const endEthy = parseFloat(endFills.ethylene.value);
+  const endHum = parseFloat(endFills.hum.value);
+  const endTemp = parseFloat(endFills.temp.value);
+  const endPres = parseFloat(endFills.pres.value);
+  const endO2 = parseFloat(endFills.o2.value);
+
+  const crop = CROPS[room.cropId];
+  const cropTitle = crop.displayName.split(' — ')[0];
+  const cropSub = crop.displayName.includes(' — ') ? crop.displayName.split(' — ')[1] : '';
+
+  // Update toggle button + status text + system status pill (no animation needed)
+  const toggle = document.getElementById('atmos-toggle');
+  if (toggle) {
+    toggle.classList.toggle('on', room.atmosOn);
+    toggle.textContent = '⏻ ATMOS ' + (room.atmosOn ? 'ON' : 'OFF');
+  }
+  const statusText = document.querySelector('.atmos-status');
+  if (statusText) {
+    statusText.classList.toggle('warn', !room.atmosOn);
+    statusText.textContent = room.atmosOn
+      ? '✓ All 5 factors at ' + (cropSub || cropTitle) + ' optimal — Atmos is working'
+      : 'Press to see Atmos bring all factors to ' + cropTitle.toLowerCase() + ' optimal levels';
+  }
+  const sysPill = document.querySelector('.system-status-card .pill');
+  if (sysPill) {
+    sysPill.classList.toggle('warn', !room.atmosOn);
+    sysPill.textContent = room.atmosOn ? '✓ at optimal' : '⚠ operational';
+  }
+
+  // Trigger CSS transition on bar widths/colors (3s)
+  const barRows = document.querySelectorAll('.bars-card .bar-row');
+  const keys = ['ethylene', 'temp', 'hum', 'pres', 'o2'];
+  barRows.forEach((row, i) => {
+    const k = keys[i];
+    const fill = row.querySelector('.bar-fill');
+    if (fill) {
+      fill.style.width = endFills[k].w + '%';
+      fill.style.background = endFills[k].color;
+    }
+  });
+
+  // Animate numeric readouts via rAF over 3s
+  const startTime = performance.now();
+  const dur = 3000;
+  function tick(now) {
+    const t = Math.min(1, (now - startTime) / dur);
+    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const ethy = startEthy + (endEthy - startEthy) * eased;
+    const hum = startHum + (endHum - startHum) * eased;
+    const temp = startTemp + (endTemp - startTemp) * eased;
+    const pres = startPres + (endPres - startPres) * eased;
+    const o2 = startO2 + (endO2 - startO2) * eased;
+
+    const ethyEl = document.querySelector('.ethy-big');
+    if (ethyEl) ethyEl.textContent = ethy.toFixed(3);
+    const minis = document.querySelectorAll('.stat-card .mini .v');
+    if (minis.length === 4) {
+      minis[0].textContent = hum.toFixed(1) + '%';
+      minis[1].textContent = temp.toFixed(1) + '°C';
+      minis[2].textContent = pres.toFixed(2) + ' atm';
+      minis[3].textContent = o2.toFixed(2) + '%';
+    }
+
+    if (t < 1) requestAnimationFrame(tick);
+    else {
+      // Re-render chart at the end (chart needs full redraw — has ATMOS ACTIVATED line)
+      const chartMount = document.getElementById('chart-mount');
+      if (chartMount) chartMount.innerHTML = chartSvg(room);
+      _atmosAnimating = false;
+    }
+  }
+  requestAnimationFrame(tick);
 }
 
 // === CHART ===
@@ -1084,6 +1204,7 @@ function startLiveTick() {
   if (_liveTickInterval) clearInterval(_liveTickInterval);
   _liveTickInterval = setInterval(() => {
     if (state.view !== 'room') return;
+    if (_atmosAnimating) return;
     const facility = state.facility;
     if (!facility) return;
     const room = facility.rooms.find(r => r.id === state.currentRoomId);
