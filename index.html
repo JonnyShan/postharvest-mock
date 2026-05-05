@@ -270,21 +270,10 @@
   .partners { width: 100vw; margin-left: calc(50% - 50vw); margin-top: 64px; background: #1a1a1a; padding: 56px 24px 64px; }
   .partners-inner { max-width: 1200px; margin: 0 auto; }
   .partners h2 { color: #4caf50; font-size: 28px; font-weight: 700; margin-bottom: 32px; letter-spacing: -0.5px; }
-  .partners-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; }
-  .partner-card { background: white; border-radius: 10px; padding: 22px 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 96px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-  .partner-card .name { font-weight: 800; color: #1a1a1a; font-size: 13px; line-height: 1.2; letter-spacing: 0.3px; }
-  .partner-card .sub { font-size: 9px; color: #666; letter-spacing: 0.4px; text-transform: uppercase; margin-top: 5px; font-weight: 600; }
-  .partner-card .pre { font-size: 9px; color: #666; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600; }
+  .partners-img { display: block; width: 100%; max-width: 1200px; margin: 0 auto; height: auto; }
   @media (max-width: 800px) {
     .partners { padding: 40px 18px 48px; margin-top: 40px; }
     .partners h2 { font-size: 22px; margin-bottom: 22px; }
-    .partners-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .partner-card { padding: 16px 12px; min-height: 76px; }
-    .partner-card .name { font-size: 11px; }
-    .partner-card .sub { font-size: 8px; }
-  }
-  @media (max-width: 480px) {
-    .partners-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
   /* === SPARKLINE === */
@@ -1181,22 +1170,7 @@ function renderSplash(app) {
         <div class="partners">
           <div class="partners-inner">
             <h2>Academic Collaboration &amp; Partnerships</h2>
-            <div class="partners-grid">
-              <div class="partner-card"><div class="pre">Stellenbosch</div><div class="name">University</div></div>
-              <div class="partner-card"><div class="name">Australian Agritech</div><div class="sub">Association</div></div>
-              <div class="partner-card"><div class="name">UNSW</div><div class="sub">Sydney</div></div>
-              <div class="partner-card"><div class="name">Edison Awards</div><div class="sub">Environmental Impact</div></div>
-              <div class="partner-card"><div class="name">UTokyo</div></div>
-              <div class="partner-card"><div class="name">NC State</div><div class="sub">University</div></div>
-              <div class="partner-card"><div class="name">Good Design Award</div><div class="sub">Best in Class</div></div>
-              <div class="partner-card"><div class="name">UC Davis</div><div class="sub">University of California</div></div>
-              <div class="partner-card"><div class="name">SingularityU Australia</div><div class="sub">Global Impact Challenge</div></div>
-              <div class="partner-card"><div class="name">Western State Uni</div><div class="sub">California</div></div>
-              <div class="partner-card"><div class="name">The Wonderful Company</div></div>
-              <div class="partner-card"><div class="name">Thrive</div><div class="sub">by SVG Ventures</div></div>
-              <div class="partner-card"><div class="name">Walmart</div></div>
-              <div class="partner-card"><div class="name">evoke AG.</div></div>
-            </div>
+            <img class="partners-img" src="assets/partners.png" alt="Academic and industry partners — Stellenbosch, UNSW, UC Davis, NC State, UTokyo, The Wonderful Company, Walmart, Thrive, evoke AG, Edison Awards, Good Design Award, SingularityU, Western State, Australian Agritech">
           </div>
         </div>
       </div>
