@@ -1016,9 +1016,9 @@ function sortRoomsByOrder(rooms, key) {
   if (!key || key === 'default') return arr;
   switch (key) {
     case 'ethylene-asc':
-      return arr.sort((a, b) => roomNaturalEthylene(a.room) - roomNaturalEthylene(b.room));
+      return arr.sort((a, b) => roomEthylene(a.room) - roomEthylene(b.room));
     case 'ethylene-desc':
-      return arr.sort((a, b) => roomNaturalEthylene(b.room) - roomNaturalEthylene(a.room));
+      return arr.sort((a, b) => roomEthylene(b.room) - roomEthylene(a.room));
     case 'oxygen':
       return arr.sort((a, b) => roomO2(b.room) - roomO2(a.room));
     case 'co2':
@@ -1044,7 +1044,7 @@ function metricForOrder(room, key) {
   switch (key) {
     case 'ethylene-asc':
     case 'ethylene-desc':
-      return { value: roomNaturalEthylene(room).toFixed(2), unit: 'ppm natural' };
+      return { value: roomEthylene(room).toFixed(3), unit: 'ppm' };
     case 'oxygen':
       return { value: roomO2(room).toFixed(1) + '%', unit: 'O₂' };
     case 'co2':
