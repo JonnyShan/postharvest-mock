@@ -353,22 +353,33 @@ const COMPANIES = [
     hq: 'Hastings, Hawke\'s Bay, NZ',
     lat: -39.6068, lng: 176.8893,
     rooms: (() => {
-      const rooms = [];
-      const baseLat = -39.6068, baseLng = 176.8893;
-      // 4 columns × 3 rows = 12 rooms, spread ~0.0008 deg (~80m) per cell
-      for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 4; c++) {
-          const idx = r * 4 + c + 1;
-          rooms.push({
-            name: 'Rockit Room ' + idx,
-            address: '96 Kings Road, Whakatu Cold Stores, Hastings',
-            lat: baseLat + (r - 1) * 0.0008,
-            lng: baseLng + (c - 1.5) * 0.0010,
-            cropId: 'apple-rockit'
-          });
-        }
-      }
-      return rooms;
+      // 12 rooms placed inside Whakatu Cold Stores building footprints.
+      // Three rows of buildings × four cool-room cells per row.
+      // Coords hand-tuned to align w/ visible roofs on OSM at zoom 17-18.
+      const coords = [
+        // Row 1 (north building cluster — top of screenshot)
+        { lat: -39.60564, lng: 176.88922 },
+        { lat: -39.60562, lng: 176.88965 },
+        { lat: -39.60560, lng: 176.89008 },
+        { lat: -39.60565, lng: 176.89052 },
+        // Row 2 (middle building strip)
+        { lat: -39.60605, lng: 176.88935 },
+        { lat: -39.60602, lng: 176.88975 },
+        { lat: -39.60600, lng: 176.89015 },
+        { lat: -39.60603, lng: 176.89055 },
+        // Row 3 (south building strip)
+        { lat: -39.60645, lng: 176.88945 },
+        { lat: -39.60643, lng: 176.88982 },
+        { lat: -39.60641, lng: 176.89020 },
+        { lat: -39.60644, lng: 176.89058 }
+      ];
+      return coords.map((c, i) => ({
+        name: 'Rockit Room ' + (i + 1),
+        address: '96 Kings Road, Whakatu Cold Stores, Hastings',
+        lat: c.lat,
+        lng: c.lng,
+        cropId: 'apple-rockit'
+      }));
     })()
   },
   {
