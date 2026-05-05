@@ -387,6 +387,37 @@
   .intg-sms .sms-current .remove { padding: 6px 12px; border-radius: 14px; border: 1.5px solid #f5cccc; background: #fff5f4; color: #c0392b; font-size: 11px; font-weight: 700; cursor: pointer; margin-left: auto; }
   .intg-sms .sms-current .remove:hover { background: #c0392b; color: white; border-color: #c0392b; }
 
+  /* === COMPARE PANEL === */
+  .cmp-btn { background: white; color: #1a6b1a; border: 1.5px solid #1a6b1a; padding: 7px 14px; border-radius: 18px; cursor: pointer; font-size: 12px; font-weight: 700; transition: background 0.15s, color 0.15s; }
+  .cmp-btn:hover { background: #1a6b1a; color: white; }
+  .cmp-overlay { position: fixed; inset: 0; background: rgba(10,20,10,0.65); z-index: 1500; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.18s ease-out; }
+  .cmp-modal { background: white; border-radius: 14px; width: 100%; max-width: 920px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,0.5); animation: shipPop 0.25s cubic-bezier(0.2, 0.8, 0.3, 1.2); overflow: hidden; }
+  .cmp-head { padding: 18px 22px 14px; border-bottom: 1px solid #eee; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .cmp-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+  .cmp-sub { font-size: 12px; color: #666; margin-top: 4px; line-height: 1.45; max-width: 600px; }
+  .cmp-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; flex: 1 1 auto; overflow-y: auto; }
+  .cmp-side { padding: 22px; }
+  .cmp-side.best  { border-right: 1px solid #f0f0f0; background: #f7faf7; }
+  .cmp-side.worst { background: #fff8f7; }
+  .cmp-side .label { font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800; margin-bottom: 6px; }
+  .cmp-side.best .label  { color: #2e7d32; }
+  .cmp-side.worst .label { color: #c0392b; }
+  .cmp-side h3 { font-size: 17px; color: #1a1a1a; margin-bottom: 4px; }
+  .cmp-side .cmp-crop { font-size: 11px; color: #1a6b1a; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 18px; }
+  .cmp-side.worst .cmp-crop { color: #c0392b; }
+  .cmp-stat { display: grid; grid-template-columns: 90px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+  .cmp-stat:last-child { border-bottom: none; }
+  .cmp-stat .lbl { font-size: 10px; color: #888; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700; padding-top: 3px; }
+  .cmp-stat .val { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+  .cmp-stat .target { font-size: 10px; color: #888; margin-top: 2px; }
+  .cmp-side.best  .val { color: #1a6b1a; }
+  .cmp-side.worst .val { color: #c0392b; }
+  .cmp-spark { margin-top: 14px; }
+  @media (max-width: 700px) {
+    .cmp-body { grid-template-columns: 1fr; }
+    .cmp-side.best { border-right: none; border-bottom: 1px solid #f0f0f0; }
+  }
+
   /* === SHIPPING PRIORITY === */
   .ship-btn { background: white; color: #2e7d32; border: 1.5px solid #2e7d32; padding: 7px 14px; border-radius: 18px; cursor: pointer; font-size: 12px; font-weight: 700; transition: background 0.15s, color 0.15s; }
   .ship-btn:hover { background: #2e7d32; color: white; }
@@ -717,6 +748,7 @@ const DEFAULT_STATE = {
   shippingPanelOpen: false,
   orderMenuOpen: false,
   orderBy: 'default',
+  compareOpen: false,
   integrationsPanelOpen: false,
   smsPhone: '',
   _smsDraft: '',
@@ -953,6 +985,7 @@ const TOP_3_ATTENTION_CAUSES = [
 const ORDER_OPTIONS = [
   { key: 'default',       label: 'Default order' },
   { key: 'overall',       label: 'Overall Health (all factors)' },
+  { key: 'stable',        label: 'Most Stable' },
   { key: 'ethylene-asc',  label: 'Ethylene — lowest to highest' },
   { key: 'ethylene-desc', label: 'Ethylene — highest to lowest' },
   { key: 'oxygen',        label: 'Oxygen' },
@@ -961,6 +994,14 @@ const ORDER_OPTIONS = [
   { key: 'pressure',      label: 'Atmospheric Pressure' },
   { key: 'unstable',      label: 'Most Unstable' }
 ];
+
+// Movement score across all 5 factors (lower = more stable).
+function roomStabilityScore(room) {
+  const seed = roomSeed(room.id);
+  if (room.attentionReason) return 100 + seed * 20;     // 100–120 (worst)
+  if (!room.atmosOn)        return 50 + seed * 30;       // 50–80
+  return 10 + seed * 20;                                  // 10–30 (best)
+}
 
 function pseudoPressure(room) {
   return 1.01 + (roomSeed(room.id) - 0.5) * 0.04;
@@ -982,10 +1023,10 @@ function sortRoomsByOrder(rooms, key) {
       return arr.sort((a, b) => roomTemp(b.room) - roomTemp(a.room));
     case 'pressure':
       return arr.sort((a, b) => pseudoPressure(b.room) - pseudoPressure(a.room));
-    case 'unstable': {
-      const score = (r) => (r.attentionReason ? 0 : (r.atmosOn ? 2 : 1));
-      return arr.sort((a, b) => score(a.room) - score(b.room));
-    }
+    case 'stable':
+      return arr.sort((a, b) => roomStabilityScore(a.room) - roomStabilityScore(b.room));
+    case 'unstable':
+      return arr.sort((a, b) => roomStabilityScore(b.room) - roomStabilityScore(a.room));
     case 'overall':
     default: {
       // Worst first: attention=2, off=1, on=0
@@ -1008,6 +1049,8 @@ function metricForOrder(room, key) {
       return { value: roomTemp(room).toFixed(1) + '°C', unit: 'temp' };
     case 'pressure':
       return { value: pseudoPressure(room).toFixed(2), unit: 'atm' };
+    case 'stable':
+      return { value: room.attentionReason ? 'critical' : (room.atmosOn ? 'stable' : 'drifting'), unit: '' };
     case 'unstable':
       return { value: room.attentionReason ? 'critical' : (room.atmosOn ? 'stable' : 'drifting'), unit: '' };
     case 'overall':
@@ -1775,6 +1818,7 @@ function renderDashboard(app) {
               ` : ''}
             </div>
             <button class="atmos-all-btn ${allOn ? 'off' : ''}" id="atmos-all">${allOn ? 'Atmos All OFF' : 'Atmos All ON'}</button>
+            <button class="cmp-btn" id="cmp-btn" title="Compare best vs worst room">Compare</button>
             <button class="add-room-btn" id="add-room">+ Add Room</button>
           </div>
         </div>
@@ -1842,6 +1886,7 @@ function renderDashboard(app) {
     ${state.notifPanelOpen ? renderNotifPanel(notifs) : ''}
     ${state.shippingPanelOpen ? renderShippingPanel(facility) : ''}
     ${state.integrationsPanelOpen ? renderIntegrationsPanel() : ''}
+    ${state.compareOpen ? renderComparePanel(facility) : ''}
     ${state.toast ? renderToast(state.toast) : ''}
   `;
 
@@ -1907,6 +1952,15 @@ function renderDashboard(app) {
     state.integrationsPanelOpen = true;
     state.notifPanelOpen = false;
     state.shippingPanelOpen = false;
+    state.compareOpen = false;
+    saveState();
+    render();
+  };
+  document.getElementById('cmp-btn').onclick = () => {
+    state.compareOpen = true;
+    state.notifPanelOpen = false;
+    state.shippingPanelOpen = false;
+    state.integrationsPanelOpen = false;
     saveState();
     render();
   };
@@ -1914,6 +1968,7 @@ function renderDashboard(app) {
   if (state.notifPanelOpen) wireNotifPanel(facility);
   if (state.shippingPanelOpen) wireShippingPanel(facility);
   if (state.integrationsPanelOpen) wireIntegrationsPanel();
+  if (state.compareOpen) wireComparePanel(facility);
 
   if (state.gridOpen) {
     document.querySelectorAll('.tile').forEach(el => {
@@ -2277,6 +2332,65 @@ function wireIntegrationsPanel() {
       render();
     };
   });
+}
+
+function renderComparePanel(facility) {
+  const ranked = sortRoomsByOrder(facility.rooms, 'stable');
+  const best = ranked[0] && ranked[0].room;
+  const worst = ranked[ranked.length - 1] && ranked[ranked.length - 1].room;
+  if (!best || !worst) return '';
+
+  function side(room, kind) {
+    const crop = CROPS[room.cropId] || {};
+    const idx = facility.rooms.indexOf(room);
+    const ethy = roomEthylene(room);
+    const temp = roomTemp(room);
+    const o2   = roomO2(room);
+    const co2  = roomCO2(room);
+    const pres = pseudoPressure(room);
+    const status = room.attentionReason ? 'NEEDS ATTENTION' : (room.atmosOn ? 'AT OPTIMAL' : 'OPERATIONAL');
+    return `
+      <div class="cmp-side ${kind}">
+        <div class="label">${kind === 'best' ? 'Most stable' : 'Least stable'}</div>
+        <h3>Room ${idx + 1} · ${escHtml(room.name)}</h3>
+        <div class="cmp-crop">${escHtml(crop.displayName || '')} · ${escHtml(status)}</div>
+        <div class="cmp-stat"><div class="lbl">Ethylene</div><div><div class="val">${ethy.toFixed(3)} ppm</div><div class="target">target ${escHtml(crop.ethyleneThreshold || '')}</div></div></div>
+        <div class="cmp-stat"><div class="lbl">Temp</div><div><div class="val">${temp.toFixed(1)}°C</div><div class="target">target ${escHtml(crop.tempRange || '')}</div></div></div>
+        <div class="cmp-stat"><div class="lbl">O₂</div><div><div class="val">${o2.toFixed(1)}%</div><div class="target">target ${escHtml(crop.o2Range || '')}</div></div></div>
+        <div class="cmp-stat"><div class="lbl">CO₂</div><div><div class="val">${co2.toFixed(1)}%</div><div class="target">target ${escHtml(crop.co2Range || '')}</div></div></div>
+        <div class="cmp-stat"><div class="lbl">Pressure</div><div><div class="val">${pres.toFixed(2)} atm</div><div class="target">target ${escHtml(crop.pressure || '')}</div></div></div>
+        <div class="cmp-spark">${sparklineSvg(room)}<div class="spark-lbl">24h trend</div></div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="cmp-overlay" id="cmp-overlay">
+      <div class="cmp-modal" onclick="event.stopPropagation()">
+        <div class="cmp-head">
+          <div>
+            <div class="cmp-title">Compare best vs worst room</div>
+            <div class="cmp-sub">Most stable on the left, least stable on the right — measured across all 5 factors (ethylene, temp, O₂, CO₂, pressure).</div>
+          </div>
+          <button class="ship-x" id="cmp-x" title="Close">×</button>
+        </div>
+        <div class="cmp-body">
+          ${side(best, 'best')}
+          ${side(worst, 'worst')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function wireComparePanel(facility) {
+  const overlay = document.getElementById('cmp-overlay');
+  if (!overlay) return;
+  overlay.onclick = () => { state.compareOpen = false; saveState(); render(); };
+  document.getElementById('cmp-x').onclick = (e) => {
+    e.stopPropagation();
+    state.compareOpen = false; saveState(); render();
+  };
 }
 
 function renderShippingPanel(facility) {
