@@ -2,13 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostHarvest — Atmos Mock</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a6b1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PostHarvest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M50 58 C18 48 4 28 8 6 C30 12 42 30 50 58 Z' fill='%233a9c33'/%3E%3Cpath d='M50 58 C28 42 14 22 20 2 C38 12 46 32 50 58 Z' fill='%2352b048'/%3E%3Cpath d='M50 58 C36 38 30 18 38 0 C48 16 52 36 50 58 Z' fill='%236cc55f'/%3E%3Cpath d='M50 58 C44 40 46 20 58 8 C58 28 56 46 50 58 Z' fill='%2386d97c'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23ffffff'/%3E%3Cpath d='M50 58 C18 48 4 28 8 6 C30 12 42 30 50 58 Z' fill='%233a9c33'/%3E%3Cpath d='M50 58 C28 42 14 22 20 2 C38 12 46 32 50 58 Z' fill='%2352b048'/%3E%3Cpath d='M50 58 C36 38 30 18 38 0 C48 16 52 36 50 58 Z' fill='%236cc55f'/%3E%3Cpath d='M50 58 C44 40 46 20 58 8 C58 28 56 46 50 58 Z' fill='%2386d97c'/%3E%3C/svg%3E">
+<title>PostHarvest — Atmos</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #1a1a1a; min-height: 100vh; font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a1a; }
-  #app { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body { background: #1a1a1a; min-height: 100vh; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1a1a1a; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
+  button, .splash-card, .tile, .ship-row, .intg-card { touch-action: manipulation; }
+  input, textarea, select { font-size: 16px; } /* prevent iOS zoom on focus */
+  #app { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); padding-top: max(20px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); }
 
   /* === WHITE PAGE WRAPPER (splash, AI lookup, wizard) === */
   .page-white { position: fixed; inset: 0; background: #ffffff; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 56px 24px 40px; }
@@ -359,46 +370,74 @@
 
   /* === MOBILE RESPONSIVE === */
   @media (max-width: 800px) {
-    #app { padding: 8px; }
+    #app { padding: 8px; padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
     .frame { padding: 4px; border-radius: 12px; max-width: 100%; }
     .dash { border-radius: 9px; }
-    .dash-nav { padding: 8px 10px; flex-wrap: wrap; gap: 8px; }
+    .dash-nav { padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
     .dash-nav .crumbs { display: none; }
     .dash-nav .logo { font-size: 13px; }
     .dash-nav .user { gap: 6px; flex-wrap: wrap; }
-    .dash-nav .reset, .inject-btn { padding: 5px 9px; font-size: 10px; }
+    .dash-nav .reset, .inject-btn, .bell-btn { padding: 8px 12px; font-size: 11px; min-height: 36px; }
     .dash-nav .user > span { display: none; }
-    .nav-arrow { width: 26px; height: 26px; }
+    .nav-arrow { width: 36px; height: 36px; font-size: 16px; }
     .kpi-strip { grid-template-columns: 1fr; padding: 12px 14px; gap: 8px; }
-    .kpi-card { padding: 10px 14px; }
+    .kpi-card { padding: 12px 14px; }
     .kpi-card .val { font-size: 22px; }
     .fac-header { padding: 14px 16px; }
     .fac-header .title h2 { font-size: 18px; }
-    .fac-header .actions { width: 100%; flex-wrap: wrap; gap: 6px; }
+    .fac-header .actions { width: 100%; flex-wrap: wrap; gap: 8px; }
+    .fac-header .actions button { min-height: 40px; padding: 10px 14px; font-size: 12px; }
+    .ship-btn, .intg-btn, .add-room-btn, .atmos-all-btn { flex: 1 1 auto; }
+    .toggle button { padding: 10px 16px; min-height: 40px; }
     .fac-body { padding: 14px; }
     .grid-tiles { grid-template-columns: 1fr; gap: 12px; }
     .tile { padding: 14px; }
     .tile h4 { font-size: 14px; }
-    #map-container { height: 360px; }
-    .ai-toast { left: 12px; right: 12px; bottom: 12px; width: auto; }
-    .notif-panel { width: calc(100vw - 32px); right: 16px; }
+    #map-container { height: 380px; }
+    .ai-toast { left: 12px; right: 12px; bottom: 12px; width: auto; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+    .notif-panel { width: calc(100vw - 24px); right: 12px; left: 12px; max-width: none; }
     /* Splash */
+    .splash { padding: 40px 20px 32px; padding-top: max(40px, env(safe-area-inset-top)); padding-bottom: max(32px, env(safe-area-inset-bottom)); }
+    .splash-brand { margin-bottom: 36px; }
+    .splash-brand-name { font-size: 28px; }
     .splash h1 { font-size: 24px; }
     .splash-cards { grid-template-columns: 1fr; gap: 14px; }
-    .splash-card { padding: 24px 18px; }
+    .splash-card { padding: 24px 18px; min-height: 120px; }
+    .page-white { padding: 32px 16px; padding-top: max(32px, env(safe-area-inset-top)); }
     /* Room view */
     .room-body { grid-template-columns: 1fr; }
-    .crop-strip { padding: 10px 14px; gap: 12px; }
-    .atmos-bar { padding: 10px 14px; }
-    .tabs-row { padding: 0 12px; flex-wrap: wrap; }
-    .tabs-row .room-name { font-size: 15px; padding: 10px 0; }
-    .tabs-row .tab { padding: 8px 8px; font-size: 10px; }
-    .tabs-row .back { padding: 10px 0; }
+    .crop-strip { padding: 10px 14px; gap: 12px; font-size: 11px; }
+    .crop-strip .note { display: none; }
+    .atmos-bar { padding: 12px 14px; }
+    .atmos-toggle { padding: 12px 18px; min-height: 44px; }
+    .tabs-row { padding: 0 12px; flex-wrap: wrap; gap: 0; }
+    .tabs-row .room-name { font-size: 15px; padding: 10px 0; width: 100%; }
+    .tabs-row .tab { padding: 10px 10px; font-size: 10px; min-height: 40px; }
+    .tabs-row .back { padding: 10px 0; min-height: 40px; }
+    /* Modals fill viewport better */
+    .ship-modal, .intg-modal { max-height: 92vh; max-width: 100%; border-radius: 14px 14px 0 0; }
+    .ship-overlay, .intg-overlay { padding: 0; align-items: flex-end; }
+    .ship-head, .intg-head { padding: 16px 18px 12px; }
+    .ship-row { padding: 12px 16px; }
+    .intg-grid { padding: 6px 16px 14px; }
+    .intg-stats { padding: 12px 16px; }
+    .intg-sms { margin: 4px 16px 12px; }
+    /* Attention banner */
+    .attention-banner { padding: 14px 16px 14px; }
+    .attention-banner .ab-cause { padding: 10px 12px; }
   }
   @media (max-width: 500px) {
     .kpi-card .val { font-size: 20px; }
     .fac-header .title h2 { font-size: 16px; }
-    .nav-arrows { gap: 2px; }
+    .fac-header .title .hq { font-size: 12px; }
+    .nav-arrows { gap: 4px; }
+    .splash-brand-name { font-size: 24px; }
+    .splash-brand-logo { width: 40px; height: 40px; }
+    .splash h1 { font-size: 22px; }
+    .splash .subtitle { font-size: 13px; margin-bottom: 32px; }
+    .ai-panel { padding: 24px 20px; }
+    .crop-strip { gap: 8px; }
+    .crop-strip .col { gap: 4px; }
   }
 </style>
 </head>
