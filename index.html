@@ -256,6 +256,7 @@
   .chart-event:hover > circle:first-of-type { r: 8; }
   .chart-tooltip { position: absolute; background: #1a1a1a; color: white; border-radius: 10px; padding: 12px 14px; font-size: 12px; pointer-events: none; z-index: 100; max-width: 280px; box-shadow: 0 12px 36px rgba(0,0,0,0.4); animation: fadeIn 0.12s ease-out; }
   .chart-tooltip .ai-pill { background: #2e7d32; color: white; font-size: 9px; padding: 3px 8px; border-radius: 5px; letter-spacing: 0.6px; font-weight: 800; margin-bottom: 8px; display: inline-block; }
+  .chart-tooltip .ai-pill.blue { background: #1976d2; }
   .chart-tooltip .time { font-size: 10px; color: #b8b8b8; margin-bottom: 4px; letter-spacing: 0.5px; font-weight: 600; }
   .chart-tooltip .msg { font-size: 12px; line-height: 1.45; color: white; }
 
@@ -2804,6 +2805,10 @@ function renderRoom(app) {
   if (tooltip && card) {
     document.querySelectorAll('.chart-event').forEach(g => {
       g.addEventListener('mouseenter', () => {
+        const tag = g.dataset.tag || 'Atmos AI';
+        const pill = tooltip.querySelector('.ai-pill');
+        pill.textContent = tag;
+        pill.className = 'ai-pill' + (tag === 'Automation' ? ' blue' : '');
         tooltip.querySelector('.time').textContent = g.dataset.time || '';
         tooltip.querySelector('.msg').textContent = g.dataset.msg || '';
         tooltip.style.display = 'block';
@@ -2918,25 +2923,43 @@ function chartSvg(room) {
   const innerW = W - padL - padR;
   const innerH = H - padT - padB;
   const N = 48;
-  const activatedAt = N * 0.7;
-  const on = room.atmosOn;
   const seed = roomSeed(room.id);
+  const att = !!room.attentionReason;
 
-  // Deterministic noise so chart doesn't jiggle on each render
+  // Anomaly window for attention rooms (each step ≈ 30 min over 24h chart):
+  //   redIdx -> issue starts, line begins drifting up
+  //   peakIdx -> max deviation
+  //   blueIdx -> Automation triggers (same step as peak)
+  //   recoveredIdx -> back to baseline
+  const redIdx       = 26;
+  const peakIdx      = 28;
+  const blueIdx      = 28;
+  const recoveredIdx = 31;
+
   function noise(i, salt) {
     return Math.sin(i * 1.7 + seed * salt + salt) * 0.5;
   }
 
-  function computePoints(beforeBase, afterBase, beforeAmp, afterAmp, scaleMin, scaleMax, salt) {
+  function attMul(i) {
+    if (i < redIdx) return 1.0;
+    if (i <= peakIdx) {
+      const t = (i - redIdx) / Math.max(1, peakIdx - redIdx);
+      return 1.0 + t * 0.55;            // ramp up to 1.55x baseline
+    }
+    if (i <= recoveredIdx) {
+      const t = (i - blueIdx) / Math.max(1, recoveredIdx - blueIdx);
+      return 1.55 - t * 0.55;            // ramp back down to 1.0
+    }
+    return 1.0;
+  }
+
+  function computePoints(baseline, amp, scaleMin, scaleMax, salt, useAttArc) {
     const points = [];
     for (let i = 0; i < N; i++) {
-      const isBefore = i < activatedAt;
-      let v;
-      if (on) {
-        v = isBefore ? beforeBase + noise(i, salt) * beforeAmp : afterBase + noise(i, salt) * afterAmp;
-      } else {
-        v = beforeBase + noise(i, salt) * beforeAmp;
-      }
+      const mul = (att && useAttArc) ? attMul(i) : 1.0;
+      // Reduce jitter inside anomaly window so the arc reads cleanly
+      const ampScale = (att && useAttArc && i >= redIdx - 1 && i <= recoveredIdx + 1) ? 0.4 : 1.0;
+      const v = baseline * mul + noise(i, salt) * amp * ampScale;
       const x = padL + (i / (N - 1)) * innerW;
       const denom = (scaleMax - scaleMin) || 1;
       const y = padT + innerH - ((v - scaleMin) / denom) * innerH;
@@ -2955,57 +2978,56 @@ function chartSvg(room) {
   const humMid = rangeMid(crop.humidityRange);
   const o2Mid = rangeMid(crop.o2Range);
 
-  // For attention rooms, override "after" base values so the trace stays elevated/drifted
-  // through the whole chart (Atmos cannot fully compensate).
-  const att = !!room.attentionReason;
-  const ethyAfterBase = att ? ethyTarget * 1.6  : ethyTarget * 0.8;
-  const ethyAfterAmp  = att ? ethyTarget * 0.4  : ethyTarget * 0.05;
-  const tempAfterBase = att ? tempMid + 1.5     : tempMid;
-  const tempAfterAmp  = att ? 0.6               : 0.2;
-  const presAfterBase = att ? 0.99              : 1.01;
-  const presAfterAmp  = att ? 0.025             : 0.005;
-
+  // Lines kept flat near target; ethylene + temp + pressure get the anomaly arc.
   const lineDefs = [
-    { key: 'ethylene', color: '#1a6b1a', label: 'Ethylene',    points: computePoints(ethyTarget * 4, ethyAfterBase, ethyTarget * 1.5, ethyAfterAmp, 0, ethyTarget * 6, 7) },
-    { key: 'temp',     color: '#4caf50', label: 'Temperature', points: computePoints(tempMid + 3,    tempAfterBase, 0.6, tempAfterAmp,             tempMid - 5, tempMid + 8, 11) },
-    { key: 'hum',      color: '#7fc4be', label: 'Humidity',    points: computePoints(humMid - 2,     humMid,        1.5, 0.4,                       humMid - 12, humMid + 4, 13) },
-    { key: 'pres',     color: '#4db6ac', label: 'Pressure',    points: computePoints(1.01,           presAfterBase, 0.04, presAfterAmp,             0.95, 1.10, 17) },
-    { key: 'o2',       color: '#a8d8d4', label: 'Oxygen',      points: computePoints(o2Mid * 6,      o2Mid,         0.8, 0.1,                       0, Math.max(o2Mid * 8, 25), 19) }
+    { key: 'ethylene', color: '#1a6b1a', label: 'Ethylene',    useAtt: true,  points: null },
+    { key: 'temp',     color: '#4caf50', label: 'Temperature', useAtt: true,  points: null },
+    { key: 'hum',      color: '#7fc4be', label: 'Humidity',    useAtt: false, points: null },
+    { key: 'pres',     color: '#4db6ac', label: 'Pressure',    useAtt: false, points: null }, // pressure shown flat — still draw blue/red
+    { key: 'o2',       color: '#a8d8d4', label: 'Oxygen',      useAtt: false, points: null }
   ];
+  lineDefs[0].points = computePoints(ethyTarget,        ethyTarget * 0.06, 0,            ethyTarget * 2.2,           7,  true);
+  lineDefs[1].points = computePoints(tempMid + 0.2,     0.35,              tempMid - 4,  tempMid + 4,                11, true);
+  lineDefs[2].points = computePoints(humMid,            1.4,               humMid - 12,  humMid + 4,                 13, false);
+  lineDefs[3].points = computePoints(1.01,              0.004,             0.95,         1.06,                       17, false);
+  lineDefs[4].points = computePoints(o2Mid,             0.10,              0,            Math.max(o2Mid * 4.5, 22),  19, false);
 
   const lines = lineDefs.map(l => pathFromPoints(l.points, l.color));
 
-  // Time labels (11:00 .. 22:50, ~10 min apart on N=48 grid)
-  const TIMES = ['11:00','11:20','11:40','12:00','12:20','12:40','13:00','13:20','13:40','14:00','14:20','14:40','15:00','15:20','15:40','16:00','16:20','16:40','17:00','17:20','17:40','18:00','18:20','18:40','19:00','19:20','19:40','20:00','20:20','20:40','21:00','21:20','21:40','22:00','22:20','22:40','23:00','23:10','23:20','23:30','23:40','23:50','00:00','00:10','00:20','00:30','00:40','00:50'];
-  function timeAt(i) { return TIMES[i] || ''; }
-
-  // Deviation events for attention rooms — tied to the metric most likely to drift
-  let events = [];
-  if (att) {
-    events = [
-      { metric: 'ethylene', i: 26, msg: 'Ethylene started increasing — doors likely open too long. AC duty cycle elevated 38%.', tag: 'Atmos AI' },
-      { metric: 'pres',     i: 30, msg: 'Pressure trending down. Possible storage leak — inspect seals on next walk.',           tag: 'Atmos AI' },
-      { metric: 'temp',     i: 34, msg: 'Temperature drift detected. Compressor lag — schedule preventive maintenance.',         tag: 'Atmos AI' }
-    ];
+  // Index → clock time (11:00 .. + ~30 min steps)
+  function timeAt(i) {
+    const baseHr = 11;
+    const totalMins = i * 30;
+    const hr = (baseHr + Math.floor(totalMins / 60)) % 24;
+    const min = totalMins % 60;
+    return String(hr).padStart(2, '0') + ':' + String(min).padStart(2, '0');
   }
-  const eventMarkers = events.map(ev => {
-    const line = lineDefs.find(l => l.key === ev.metric);
-    if (!line || !line.points[ev.i]) return '';
-    const [x, y] = line.points[ev.i];
-    return `<g class="chart-event" data-time="${escHtml(timeAt(ev.i))}" data-tag="${escHtml(ev.tag)}" data-msg="${escHtml(ev.msg)}">
-      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="#c0392b" stroke="white" stroke-width="2"/>
-      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="#c0392b" opacity="0.18"/>
-    </g>`;
-  }).join('');
 
-  const activatedX = padL + (activatedAt / (N - 1)) * innerW;
-  const activatedLine = on ? `
-    <line x1="${activatedX}" y1="${padT}" x2="${activatedX}" y2="${H - padB}" stroke="#1a6b1a" stroke-width="1.5" stroke-dasharray="4 3"/>
-    <rect x="${activatedX - 60}" y="${padT - 14}" width="120" height="20" fill="#1a6b1a" rx="3"/>
-    <text x="${activatedX}" y="${padT}" fill="white" font-size="10" font-weight="700" text-anchor="middle">ATMOS ACTIVATED</text>
-  ` : '';
+  // Build event markers for attention rooms
+  let eventMarkers = '';
+  if (att) {
+    const ethyLine = lineDefs.find(l => l.key === 'ethylene');
+    const tempLine = lineDefs.find(l => l.key === 'temp');
 
-  const xLabels = ['11:00','12:10','13:20','14:30','15:40','16:50','18:00','19:10','20:20','21:30','22:50']
+    const events = [
+      { line: ethyLine, i: redIdx,  type: 'red',  tag: 'Atmos AI',   msg: 'Ethylene started increasing — doors likely open too long. SMS sent to assigned recipient.' },
+      { line: ethyLine, i: blueIdx, type: 'blue', tag: 'Automation', msg: 'Ethylene scrubber engaged automatically — line returning to baseline.' },
+      { line: tempLine, i: redIdx + 1,  type: 'red',  tag: 'Atmos AI',   msg: 'Temperature rising — compressor lag detected. Personnel notified.' },
+      { line: tempLine, i: blueIdx + 1, type: 'blue', tag: 'Automation', msg: 'Compressor cycle increased automatically — temperature recovering.' }
+    ];
+
+    eventMarkers = events.map(ev => {
+      if (!ev.line || !ev.line.points[ev.i]) return '';
+      const [x, y] = ev.line.points[ev.i];
+      const fill = ev.type === 'red' ? '#c0392b' : '#1976d2';
+      return `<g class="chart-event" data-time="${escHtml(timeAt(ev.i))}" data-tag="${escHtml(ev.tag)}" data-msg="${escHtml(ev.msg)}">
+        <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="${fill}" opacity="0.18"/>
+        <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="${fill}" stroke="white" stroke-width="2"/>
+      </g>`;
+    }).join('');
+  }
+
+  const xLabels = ['11:00','13:30','16:00','18:30','21:00','23:30','02:00','04:30','07:00','09:30','11:00']
     .map((t, i) => {
       const x = padL + (i / 10) * innerW;
       return `<text x="${x}" y="${H - 6}" font-size="9" fill="#888" text-anchor="middle">${t}</text>`;
@@ -3024,7 +3046,6 @@ function chartSvg(room) {
 
   return `<svg viewBox="0 0 ${W} ${H + 24}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block;">
     ${lines.join('')}
-    ${activatedLine}
     ${eventMarkers}
     ${xLabels}
     ${legend}
