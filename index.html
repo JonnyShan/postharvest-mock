@@ -595,9 +595,11 @@ const DEFAULT_STATE = {
   toast: null,
   shippingPanelOpen: false,
   integrationsPanelOpen: false,
-  integrationsState: null,
   smsPhone: '',
   _smsDraft: '',
+  emailAddr: '',
+  _emailDraft: '',
+  appPushEnabled: false,
   history: [],
   historyIdx: -1
 };
@@ -1552,7 +1554,7 @@ function renderDashboard(app) {
             <div class="hq">${escHtml(facility.hq)} · ${facility.rooms.length} cool-rooms</div>
           </div>
           <div class="actions">
-            <button class="intg-btn" id="intg-btn" title="API & integrations">🔌 Integrations</button>
+            <button class="intg-btn" id="intg-btn" title="Notification channels">🔔 Notifications</button>
             <button class="ship-btn" id="ship-btn" title="Shipping priority list">📦 Shipping List</button>
             <button class="atmos-all-btn ${allOn ? 'off' : ''}" id="atmos-all">${allOn ? '⏻ Atmos All OFF' : '⏻ Atmos All ON'}</button>
             <div class="toggle">
@@ -1670,32 +1672,8 @@ function renderDashboard(app) {
   animateKpis();
 }
 
-// === INTEGRATIONS ===
-const INTEGRATIONS = [
-  // Connected by default
-  { id: 'slack',    name: 'Slack',           icon: '💬', desc: 'Push critical alerts to your team channel.',         det: 'Channel #cool-rooms · 18 alerts in last 24h',     defaultOn: true  },
-  { id: 'email',    name: 'Email Digest',    icon: '✉️', desc: 'Daily summary of room status to subscribers.',       det: '3 recipients · sent daily 7:00 AM',                defaultOn: true  },
-  { id: 'webhook',  name: 'Webhook (REST)',  icon: '🔗', desc: 'Real-time POST to your endpoint on any event.',      det: 'POST → ops.example.com/atmos · 1,247 calls / 24h', defaultOn: true  },
-  // Available
-  { id: 'teams',    name: 'Microsoft Teams', icon: '💼', desc: 'Mirror Slack alerts to Teams channels.',             det: '',                                                  defaultOn: false },
-  { id: 'sap',      name: 'SAP / ERP Sync',  icon: '🗄️', desc: 'Sync stock levels + room state into ERP.',           det: 'Connectors: SAP, NetSuite, Oracle, Dynamics',       defaultOn: false },
-  { id: 'powerbi',  name: 'Power BI',        icon: '📊', desc: 'Stream readings to your BI dashboards.',             det: 'OData v4 endpoint',                                 defaultOn: false },
-  { id: 'sheets',   name: 'Excel / Sheets',  icon: '📈', desc: 'Live-link readings into spreadsheets.',              det: 'Excel Online + Google Sheets',                      defaultOn: false },
-  { id: 'salesforce', name: 'Salesforce',    icon: '☁️', desc: 'Map facility data into CRM accounts.',               det: '',                                                  defaultOn: false },
-  { id: 'zapier',   name: 'Zapier',          icon: '⚡', desc: '6,000+ no-code automations.',                        det: '',                                                  defaultOn: false },
-  { id: 'rest',     name: 'Open REST API',   icon: '🔧', desc: 'Build custom integrations on our public API.',       det: 'OAuth 2.0 · OpenAPI spec · rate-limited 60/s',      defaultOn: true  }
-];
-
-function defaultIntegrationsState() {
-  const s = {};
-  INTEGRATIONS.forEach(it => { s[it.id] = !!it.defaultOn; });
-  return s;
-}
-
-function getIntegrationsState() {
-  if (!state.integrationsState) state.integrationsState = defaultIntegrationsState();
-  return state.integrationsState;
-}
+// === NOTIFICATION CHANNELS ===
+// (Renamed from INTEGRATIONS — focused on alert channels: SMS, email, app push.)
 
 function maskPhone(p) {
   if (!p) return '';
@@ -1762,52 +1740,119 @@ function wireSmsCard() {
   };
 }
 
-function renderIntegrationsPanel() {
-  const s = getIntegrationsState();
-  const connectedCount = INTEGRATIONS.filter(it => s[it.id]).length;
-  const sortKey = (it) => (s[it.id] ? 0 : 1);
-  const sorted = [...INTEGRATIONS].sort((a, b) => sortKey(a) - sortKey(b));
-  const connected = sorted.filter(it => s[it.id]);
-  const available = sorted.filter(it => !s[it.id]);
+function activeChannelCount() {
+  let n = 0;
+  if (state.smsPhone) n++;
+  if (state.emailAddr) n++;
+  if (state.appPushEnabled) n++;
+  return n;
+}
 
-  const card = (it) => `
-    <div class="intg-card ${s[it.id] ? 'connected' : ''}" data-id="${escHtml(it.id)}">
-      <div class="ico">${it.icon}</div>
-      <div class="info">
-        <div class="name">${escHtml(it.name)}</div>
-        <div class="desc">${escHtml(it.desc)}</div>
-        ${s[it.id] && it.det ? `<div class="det">✓ ${escHtml(it.det)}</div>` : ''}
+function renderEmailCard() {
+  const e = state.emailAddr || '';
+  const connected = !!e;
+  return `
+    <div class="intg-sms ${connected ? 'connected' : ''}">
+      <div class="sms-head">
+        <span class="sms-icon">✉️</span>
+        <div>
+          <div class="sms-title">Email alerts ${connected ? '<span class="pill-ok">ACTIVE</span>' : ''}</div>
+          <div class="sms-desc">Daily digest at 7am + immediate emails on critical events. No spam.</div>
+        </div>
       </div>
-      <button class="intg-toggle" data-toggle="${escHtml(it.id)}">${s[it.id] ? 'Connected' : '+ Connect'}</button>
+      ${connected ? `
+        <div class="sms-current">
+          <span class="num">${escHtml(e)}</span>
+          <span class="since">✓ Verified · last digest sent 7:00 AM</span>
+          <button class="remove" id="email-remove">Remove</button>
+        </div>
+      ` : `
+        <div class="sms-row">
+          <input id="email-input" type="email" inputmode="email" placeholder="alerts@yourcompany.com" value="${escHtml(state._emailDraft || '')}" autocomplete="email">
+          <button class="sms-btn save" id="email-save">Save email</button>
+        </div>
+      `}
     </div>
   `;
+}
 
+function wireEmailCard() {
+  const inp = document.getElementById('email-input');
+  if (inp) {
+    inp.oninput = (e) => { state._emailDraft = e.target.value; saveState(); };
+    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('email-save').click(); } };
+  }
+  const save = document.getElementById('email-save');
+  if (save) save.onclick = () => {
+    const v = (document.getElementById('email-input').value || '').trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { alert('Enter a valid email address'); return; }
+    state.emailAddr = v;
+    state._emailDraft = '';
+    saveState();
+    render();
+  };
+  const rm = document.getElementById('email-remove');
+  if (rm) rm.onclick = () => {
+    if (!confirm('Remove email alerts?')) return;
+    state.emailAddr = '';
+    saveState();
+    render();
+  };
+}
+
+function renderAppPushCard() {
+  const on = !!state.appPushEnabled;
+  return `
+    <div class="intg-sms ${on ? 'connected' : ''}">
+      <div class="sms-head">
+        <span class="sms-icon">📲</span>
+        <div>
+          <div class="sms-title">In-app & browser push ${on ? '<span class="pill-ok">ACTIVE</span>' : ''}</div>
+          <div class="sms-desc">Show alerts on this device — bell badge plus optional desktop / mobile push notification.</div>
+        </div>
+      </div>
+      <div class="sms-current">
+        <span class="num" style="font-family:'Segoe UI',sans-serif;font-size:13px;">${on ? 'Enabled on this device' : 'Off — no in-app alerts'}</span>
+        ${on ? `<span class="since">✓ Permission granted</span>` : ''}
+        <div style="flex:1;"></div>
+        <button class="${on ? 'remove' : 'sms-btn save'}" id="app-toggle" style="${on ? '' : 'padding:9px 16px;'}">${on ? 'Disable' : 'Enable'}</button>
+      </div>
+    </div>
+  `;
+}
+
+function wireAppPushCard() {
+  const btn = document.getElementById('app-toggle');
+  if (!btn) return;
+  btn.onclick = () => {
+    state.appPushEnabled = !state.appPushEnabled;
+    saveState();
+    render();
+  };
+}
+
+function renderIntegrationsPanel() {
+  const active = activeChannelCount();
   return `
     <div class="intg-overlay" id="intg-overlay">
       <div class="intg-modal" onclick="event.stopPropagation()">
         <div class="intg-head">
           <div>
-            <div class="intg-title">🔌 Integrations <span class="api-pill">OPEN API</span></div>
-            <div class="intg-sub">Plug Atmos into your stack. WiFi or Ethernet, OAuth 2.0, OpenAPI spec, no vendor lock-in.</div>
+            <div class="intg-title">🔔 Notifications</div>
+            <div class="intg-sub">Choose where Atmos sends critical alerts. Multi-channel — set one or all three.</div>
           </div>
           <button class="intg-x" id="intg-x" title="Close">×</button>
         </div>
         <div class="intg-stats">
-          <div class="intg-stat"><div class="v">${connectedCount}</div><div class="l">Connected</div></div>
-          <div class="intg-stat"><div class="v">99.98%</div><div class="l">API uptime · 90d</div></div>
-          <div class="intg-stat"><div class="v">1,247</div><div class="l">Webhook calls · 24h</div></div>
-          <div class="intg-stat"><div class="v">42 ms</div><div class="l">p50 latency</div></div>
+          <div class="intg-stat"><div class="v">${active}</div><div class="l">Active channels</div></div>
+          <div class="intg-stat"><div class="v">18</div><div class="l">Alerts sent · 24h</div></div>
+          <div class="intg-stat"><div class="v">99.9%</div><div class="l">Delivery rate</div></div>
+          <div class="intg-stat"><div class="v">2 h</div><div class="l">Last test</div></div>
         </div>
-        <div class="intg-section">Critical alerts</div>
+        <div class="intg-section">Alert channels</div>
         ${renderSmsCard()}
-        ${connected.length ? `
-          <div class="intg-section">Connected (${connected.length})</div>
-          <div class="intg-grid">${connected.map(card).join('')}</div>
-        ` : ''}
-        ${available.length ? `
-          <div class="intg-section">Available (${available.length})</div>
-          <div class="intg-grid">${available.map(card).join('')}</div>
-        ` : ''}
+        ${renderEmailCard()}
+        ${renderAppPushCard()}
       </div>
     </div>
   `;
@@ -1822,16 +1867,8 @@ function wireIntegrationsPanel() {
     state.integrationsPanelOpen = false; saveState(); render();
   };
   wireSmsCard();
-  document.querySelectorAll('[data-toggle]').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      const id = btn.dataset.toggle;
-      const s = getIntegrationsState();
-      s[id] = !s[id];
-      saveState();
-      render();
-    };
-  });
+  wireEmailCard();
+  wireAppPushCard();
 }
 
 function renderShippingPanel(facility) {
