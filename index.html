@@ -11,12 +11,17 @@
   #app { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 
   /* === SPLASH === */
-  .splash { width: 100%; max-width: 880px; }
-  .splash h1 { color: #f0f7f0; text-align: center; margin-bottom: 8px; font-size: 32px; font-weight: 700; }
-  .splash .subtitle { color: #a8c5a0; text-align: center; margin-bottom: 40px; }
+  .splash { position: fixed; inset: 0; background: #ffffff; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 56px 24px 40px; }
+  .splash-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 64px; }
+  .splash-brand-logo { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; }
+  .splash-brand-logo svg { width: 100%; height: 100%; }
+  .splash-brand-name { font-size: 36px; font-weight: 700; color: #2a2a2a; letter-spacing: -0.8px; }
+  .splash-content { width: 100%; max-width: 880px; }
+  .splash h1 { color: #1a1a1a; text-align: center; margin-bottom: 10px; font-size: 34px; font-weight: 700; letter-spacing: -0.5px; }
+  .splash .subtitle { color: #666; text-align: center; margin-bottom: 48px; font-size: 15px; }
   .splash-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  .splash-card { background: #f0f7f0; border-radius: 16px; padding: 36px 28px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; border: 2px solid transparent; }
-  .splash-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.4); border-color: #2e7d32; }
+  .splash-card { background: #f7faf7; border-radius: 16px; padding: 36px 28px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s; border: 2px solid #eaf0e8; }
+  .splash-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(46,125,50,0.18); border-color: #2e7d32; background: #f0f7f0; }
   .splash-card .icon { font-size: 36px; margin-bottom: 12px; }
   .splash-card h3 { color: #1a6b1a; margin-bottom: 8px; font-size: 20px; }
   .splash-card p { color: #555; font-size: 14px; line-height: 1.5; }
@@ -226,10 +231,10 @@
   @keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
   /* === SPLASH TRUST STRIP === */
-  .splash-trust { text-align: center; margin-top: 32px; }
-  .splash-trust .lbl { color: #6b8c63; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+  .splash-trust { text-align: center; margin-top: 48px; }
+  .splash-trust .lbl { color: #888; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; font-weight: 700; }
   .splash-trust .pills { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-  .splash-trust .pill { background: rgba(255,255,255,0.06); border: 1px solid rgba(168,197,160,0.25); color: #c8dcc4; padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 600; }
+  .splash-trust .pill { background: #f4faf4; border: 1px solid #c8d8c4; color: #1a6b1a; padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 600; }
 
   /* === SPARKLINE === */
   .spark-wrap { margin-top: 10px; }
@@ -652,6 +657,14 @@ function escHtml(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+const SPLASH_LOGO_SVG = `
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M50 58 C18 48 4 28 8 6 C30 12 42 30 50 58 Z" fill="#3a9c33"/>
+  <path d="M50 58 C28 42 14 22 20 2 C38 12 46 32 50 58 Z" fill="#52b048"/>
+  <path d="M50 58 C36 38 30 18 38 0 C48 16 52 36 50 58 Z" fill="#6cc55f"/>
+  <path d="M50 58 C44 40 46 20 58 8 C58 28 56 46 50 58 Z" fill="#86d97c"/>
+</svg>`;
+
 const PHT_LOGO_SVG = `
 <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
   <defs>
@@ -1003,28 +1016,34 @@ function render() {
 function renderSplash(app) {
   app.innerHTML = `
     <div class="splash">
-      <h1>Set up your facility</h1>
-      <p class="subtitle">Choose how you'd like to add your cool-rooms</p>
-      <div class="splash-cards">
-        <div class="splash-card" id="splash-manual">
-          <div class="icon">✍️</div>
-          <h3>Manual setup</h3>
-          <p>Enter your facility, cool-room addresses, and crops by hand. Best if you know your operation in detail.</p>
-        </div>
-        <div class="splash-card" id="splash-ai">
-          <div class="icon">🤖</div>
-          <h3>AI auto-mock</h3>
-          <p>Just type your company name. We'll search the web and pre-fill addresses, rooms, and products for you.</p>
-        </div>
+      <div class="splash-brand">
+        <span class="splash-brand-logo">${SPLASH_LOGO_SVG}</span>
+        <span class="splash-brand-name">PostHarvest</span>
       </div>
-      <div class="splash-trust">
-        <div class="lbl">Trusted by leading growers</div>
-        <div class="pills">
-          <span class="pill">Rockit Apple</span>
-          <span class="pill">Tru Cape</span>
-          <span class="pill">Costa Group</span>
-          <span class="pill">Calypso Mango</span>
-          <span class="pill">Driscoll's</span>
+      <div class="splash-content">
+        <h1>Set up your facility</h1>
+        <p class="subtitle">Choose how you'd like to add your cool-rooms</p>
+        <div class="splash-cards">
+          <div class="splash-card" id="splash-manual">
+            <div class="icon">✍️</div>
+            <h3>Manual setup</h3>
+            <p>Enter your facility, cool-room addresses, and crops by hand. Best if you know your operation in detail.</p>
+          </div>
+          <div class="splash-card" id="splash-ai">
+            <div class="icon">🤖</div>
+            <h3>AI auto-mock</h3>
+            <p>Just type your company name. We'll search the web and pre-fill addresses, rooms, and products for you.</p>
+          </div>
+        </div>
+        <div class="splash-trust">
+          <div class="lbl">Trusted by leading growers</div>
+          <div class="pills">
+            <span class="pill">Rockit Apple</span>
+            <span class="pill">Tru Cape</span>
+            <span class="pill">Costa Group</span>
+            <span class="pill">Calypso Mango</span>
+            <span class="pill">Driscoll's</span>
+          </div>
         </div>
       </div>
     </div>
