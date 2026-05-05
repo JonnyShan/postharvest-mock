@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PostHarvest — Atmos Mock</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a1a; min-height: 100vh; font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a1a; }
+  #app { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+</style>
+</head>
+<body>
+<div id="app">Loading…</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+  // === CONSTANTS ===
+  // (filled in by later tasks)
+
+  // === STATE ===
+  let state = { view: 'splash' };
+
+  // === RENDER DISPATCH ===
+  function render() {
+    const app = document.getElementById('app');
+    app.innerHTML = '<h1>Skeleton works — view: ' + state.view + '</h1>';
+  }
+
+  render();
+</script>
+</body>
+</html>
