@@ -353,25 +353,22 @@ const COMPANIES = [
     hq: 'Hastings, Hawke\'s Bay, NZ',
     lat: -39.6068, lng: 176.8893,
     rooms: (() => {
-      // 12 rooms placed inside Whakatu Cold Stores building footprints.
-      // Three rows of buildings × four cool-room cells per row.
-      // Coords hand-tuned to align w/ visible roofs on OSM at zoom 17-18.
+      // 12 rooms placed INSIDE Whakatu Cold Stores building polygon
+      // (OSM way 372927498 — the main warehouse complex). Coords sampled
+      // from a 6×8 grid clipped to the actual building footprint.
       const coords = [
-        // Row 1 (north building cluster — top of screenshot)
-        { lat: -39.60564, lng: 176.88922 },
-        { lat: -39.60562, lng: 176.88965 },
-        { lat: -39.60560, lng: 176.89008 },
-        { lat: -39.60565, lng: 176.89052 },
-        // Row 2 (middle building strip)
-        { lat: -39.60605, lng: 176.88935 },
-        { lat: -39.60602, lng: 176.88975 },
-        { lat: -39.60600, lng: 176.89015 },
-        { lat: -39.60603, lng: 176.89055 },
-        // Row 3 (south building strip)
-        { lat: -39.60645, lng: 176.88945 },
-        { lat: -39.60643, lng: 176.88982 },
-        { lat: -39.60641, lng: 176.89020 },
-        { lat: -39.60644, lng: 176.89058 }
+        { lat: -39.606812, lng: 176.888666 },
+        { lat: -39.606557, lng: 176.888666 },
+        { lat: -39.606557, lng: 176.889196 },
+        { lat: -39.606303, lng: 176.888136 },
+        { lat: -39.606303, lng: 176.888666 },
+        { lat: -39.606303, lng: 176.889196 },
+        { lat: -39.606303, lng: 176.889726 },
+        { lat: -39.606048, lng: 176.888136 },
+        { lat: -39.606048, lng: 176.888666 },
+        { lat: -39.606048, lng: 176.889196 },
+        { lat: -39.606048, lng: 176.889726 },
+        { lat: -39.605794, lng: 176.888666 }
       ];
       return coords.map((c, i) => ({
         name: 'Rockit Room ' + (i + 1),
