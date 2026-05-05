@@ -325,6 +325,39 @@
     .intg-stats { grid-template-columns: repeat(2, 1fr); }
   }
 
+  /* === NOTIFICATIONS TABS === */
+  .intg-tabs { display: flex; padding: 0 22px; border-bottom: 1px solid #eee; gap: 0; background: #fafafa; }
+  .intg-tab { background: transparent; border: none; padding: 14px 18px; font-size: 13px; font-weight: 700; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; letter-spacing: 0.3px; }
+  .intg-tab:hover { color: #1a1a1a; }
+  .intg-tab.active { color: #1a6b1a; border-bottom-color: #2e7d32; background: white; }
+
+  /* === RECIPIENT ROW === */
+  .recipients-list { padding: 4px 0 8px; }
+  .recipient-row { display: grid; grid-template-columns: 1.2fr 1.4fr 90px 90px auto; gap: 8px; align-items: center; padding: 8px 22px; }
+  .recipient-row input { padding: 8px 10px; border-radius: 8px; border: 1.5px solid #d8e0d6; font-size: 13px; background: white; outline: none; transition: border-color 0.15s; }
+  .recipient-row input:focus { border-color: #2e7d32; }
+  .recipient-row input.r-num { text-align: center; }
+  .recipient-row .rm { background: #fff5f4; color: #c0392b; border: 1.5px solid #f5cccc; padding: 7px 11px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 11px; letter-spacing: 0.4px; }
+  .recipient-row .rm:hover { background: #c0392b; color: white; border-color: #c0392b; }
+  .add-recipient-btn { margin: 8px 22px 14px; background: white; color: #2e7d32; border: 1.5px dashed #2e7d32; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; width: calc(100% - 44px); letter-spacing: 0.4px; }
+  .add-recipient-btn:hover { background: #f0f7f0; }
+
+  /* === DELAY PILLS === */
+  .delay-pills { display: flex; gap: 6px; padding: 8px 22px 16px; flex-wrap: wrap; }
+  .delay-pill { padding: 7px 14px; border-radius: 16px; border: 1.5px solid #d8e0d6; background: white; cursor: pointer; font-size: 12px; font-weight: 700; color: #555; }
+  .delay-pill:hover { border-color: #2e7d32; color: #1a1a1a; }
+  .delay-pill.active { background: #2e7d32; color: white; border-color: #2e7d32; }
+
+  /* === AUTOMATION ROW === */
+  .automation-row { display: grid; grid-template-columns: 50px 1fr; gap: 14px; align-items: center; padding: 14px 22px; border-bottom: 1px solid #f5f5f5; }
+  .automation-row:last-child { border-bottom: none; }
+  .automation-toggle { width: 40px; height: 22px; background: #ccc; border-radius: 11px; position: relative; cursor: pointer; transition: background 0.2s; }
+  .automation-toggle.on { background: #2e7d32; }
+  .automation-toggle::before { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .automation-toggle.on::before { transform: translateX(18px); }
+  .automation-row .desc { font-size: 13px; color: #1a1a1a; font-weight: 600; }
+  .automation-row .action { font-size: 11px; color: #1a6b1a; font-weight: 600; margin-top: 3px; letter-spacing: 0.3px; }
+
   /* === SMS CRITICAL ALERTS CARD === */
   .intg-sms { margin: 4px 22px 12px; padding: 14px 16px; background: #f7faf7; border: 1.5px solid #c8d8c4; border-radius: 10px; }
   .intg-sms.connected { border-color: #2e7d32; background: #f0f7f0; }
@@ -683,6 +716,13 @@ const DEFAULT_STATE = {
   emailAddr: '',
   _emailDraft: '',
   appPushEnabled: false,
+  notifTab: 'notifications',
+  notifRecipients: [
+    { id: 'rec_jonny', name: 'Jonny', phone: '', startRoom: 1, endRoom: 9 },
+    { id: 'rec_sally', name: 'Sally', phone: '', startRoom: 10, endRoom: 12 }
+  ],
+  notifDelayMins: 10,
+  automationsState: null,
   history: [],
   historyIdx: -1
 };
@@ -1716,7 +1756,7 @@ function renderDashboard(app) {
             <div class="hq">${escHtml(facility.hq)} · ${facility.rooms.length} cool-rooms</div>
           </div>
           <div class="actions">
-            <button class="intg-btn" id="intg-btn" title="Notification channels">Notifications</button>
+            <button class="intg-btn" id="intg-btn" title="Notifications &amp; Automations">Notifications &amp; Automations</button>
             <div class="order-wrap">
               <button class="ship-btn" id="ship-btn" title="Order rooms by metric">${state.orderBy && state.orderBy !== 'default' ? 'Order: ' + escHtml((ORDER_OPTIONS.find(o => o.key === state.orderBy) || {}).label || '').replace(/ — .*/, '') + ' ▾' : 'Order ▾'}</button>
               ${state.orderMenuOpen ? `
@@ -2044,28 +2084,119 @@ function wireAppPushCard() {
   };
 }
 
-function renderIntegrationsPanel() {
+const NOTIF_DELAYS = [1, 5, 10, 15, 30, 60];
+
+const AUTOMATIONS = [
+  { id: 'auto-eth-up',  trigger: 'If Ethylene increases',                         action: 'turn on ethylene scrubber',          defaultOn: true  },
+  { id: 'auto-o2-down', trigger: 'If Oxygen decreases for >15 mins',              action: 'suggest closing door',               defaultOn: true  },
+  { id: 'auto-temp-up', trigger: 'If Temperature rises >2°C above target',        action: 'increase compressor cycle',          defaultOn: false },
+  { id: 'auto-hum',     trigger: 'If Humidity drops below 85%',                   action: 'activate humidifier',                defaultOn: false },
+  { id: 'auto-pres',    trigger: 'If Pressure drops below 1.00 atm',              action: 'inspect for storage leak',           defaultOn: false },
+  { id: 'auto-co2-up',  trigger: 'If CO₂ increases beyond crop range',            action: 'vent room + suggest oxygen flush',   defaultOn: false }
+];
+
+function getAutomationsState() {
+  if (!state.automationsState) {
+    const s = {};
+    AUTOMATIONS.forEach(a => { s[a.id] = !!a.defaultOn; });
+    state.automationsState = s;
+  }
+  return state.automationsState;
+}
+
+function makeRecipientId() {
+  return 'rec_' + Math.random().toString(36).slice(2, 8);
+}
+
+function renderRecipientRow(rec) {
+  return `
+    <div class="recipient-row" data-id="${escHtml(rec.id)}">
+      <input class="r-name"  type="text" placeholder="Name"  value="${escHtml(rec.name || '')}">
+      <input class="r-phone" type="tel"  placeholder="Phone" value="${escHtml(rec.phone || '')}">
+      <input class="r-num r-start" type="number" min="1" placeholder="From" value="${rec.startRoom || 1}">
+      <input class="r-num r-end"   type="number" min="1" placeholder="To"   value="${rec.endRoom || 1}">
+      <button class="rm" data-rm="${escHtml(rec.id)}">Remove</button>
+    </div>
+  `;
+}
+
+function renderAutomationRow(rule) {
+  const on = !!getAutomationsState()[rule.id];
+  return `
+    <div class="automation-row">
+      <div class="automation-toggle ${on ? 'on' : ''}" data-auto="${escHtml(rule.id)}"></div>
+      <div>
+        <div class="desc">${escHtml(rule.trigger)}</div>
+        <div class="action">→ ${escHtml(rule.action)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderNotificationsTab() {
   const active = activeChannelCount();
+  const recipients = state.notifRecipients || [];
+  const delay = state.notifDelayMins || 10;
+  return `
+    <div class="intg-stats">
+      <div class="intg-stat"><div class="v">${active}</div><div class="l">Active channels</div></div>
+      <div class="intg-stat"><div class="v">18</div><div class="l">Alerts sent · 24h</div></div>
+      <div class="intg-stat"><div class="v">99.9%</div><div class="l">Delivery rate</div></div>
+      <div class="intg-stat"><div class="v">2 h</div><div class="l">Last test</div></div>
+    </div>
+    <div class="intg-section">Alert channels</div>
+    ${renderSmsCard()}
+    ${renderEmailCard()}
+    ${renderAppPushCard()}
+    <div class="intg-section">Trigger delay</div>
+    <div class="intg-sub" style="padding: 0 22px 8px; font-size: 12px; color: #666;">Send alert if any health marker stays out of range for this long.</div>
+    <div class="delay-pills">
+      ${NOTIF_DELAYS.map(d => `<button class="delay-pill ${d === delay ? 'active' : ''}" data-delay="${d}">${d < 60 ? d + ' min' : (d / 60) + ' hr'}</button>`).join('')}
+    </div>
+    <div class="intg-section">Room assignments</div>
+    <div class="intg-sub" style="padding: 0 22px 8px; font-size: 12px; color: #666;">Route per-room alerts to specific recipients. Each gets SMS + email when their rooms trigger.</div>
+    <div class="recipients-list">
+      ${recipients.map(renderRecipientRow).join('') || '<div style="padding: 8px 22px; font-size: 12px; color: #888; font-style: italic;">No recipients yet.</div>'}
+    </div>
+    <button class="add-recipient-btn" id="add-recipient">+ Add recipient</button>
+  `;
+}
+
+function renderAutomationsTab() {
+  const total = AUTOMATIONS.length;
+  const onCount = AUTOMATIONS.filter(a => !!getAutomationsState()[a.id]).length;
+  return `
+    <div class="intg-stats">
+      <div class="intg-stat"><div class="v">${onCount}</div><div class="l">Active rules</div></div>
+      <div class="intg-stat"><div class="v">${total}</div><div class="l">Total rules</div></div>
+      <div class="intg-stat"><div class="v">42</div><div class="l">Triggers · 24h</div></div>
+      <div class="intg-stat"><div class="v">3 m</div><div class="l">Avg response</div></div>
+    </div>
+    <div class="intg-section">Automation rules</div>
+    <div class="intg-sub" style="padding: 0 22px 8px; font-size: 12px; color: #666;">Atmos can react automatically when conditions drift. Toggle each rule independently.</div>
+    <div>
+      ${AUTOMATIONS.map(renderAutomationRow).join('')}
+    </div>
+  `;
+}
+
+function renderIntegrationsPanel() {
+  const tab = state.notifTab || 'notifications';
   return `
     <div class="intg-overlay" id="intg-overlay">
       <div class="intg-modal" onclick="event.stopPropagation()">
         <div class="intg-head">
           <div>
-            <div class="intg-title">Notifications</div>
-            <div class="intg-sub">Choose where Atmos sends critical alerts. Multi-channel — set one or all three.</div>
+            <div class="intg-title">Notifications &amp; Automations</div>
+            <div class="intg-sub">Set who gets alerts, after how long — and let Atmos auto-respond to drift.</div>
           </div>
           <button class="intg-x" id="intg-x" title="Close">×</button>
         </div>
-        <div class="intg-stats">
-          <div class="intg-stat"><div class="v">${active}</div><div class="l">Active channels</div></div>
-          <div class="intg-stat"><div class="v">18</div><div class="l">Alerts sent · 24h</div></div>
-          <div class="intg-stat"><div class="v">99.9%</div><div class="l">Delivery rate</div></div>
-          <div class="intg-stat"><div class="v">2 h</div><div class="l">Last test</div></div>
+        <div class="intg-tabs">
+          <button class="intg-tab ${tab === 'notifications' ? 'active' : ''}" data-tab="notifications">Notifications</button>
+          <button class="intg-tab ${tab === 'automations' ? 'active' : ''}" data-tab="automations">Automations</button>
         </div>
-        <div class="intg-section">Alert channels</div>
-        ${renderSmsCard()}
-        ${renderEmailCard()}
-        ${renderAppPushCard()}
+        ${tab === 'notifications' ? renderNotificationsTab() : renderAutomationsTab()}
       </div>
     </div>
   `;
@@ -2079,9 +2210,66 @@ function wireIntegrationsPanel() {
     e.stopPropagation();
     state.integrationsPanelOpen = false; saveState(); render();
   };
+  document.querySelectorAll('.intg-tab').forEach(t => {
+    t.onclick = (e) => { e.stopPropagation(); state.notifTab = t.dataset.tab; saveState(); render(); };
+  });
   wireSmsCard();
   wireEmailCard();
   wireAppPushCard();
+
+  // Delay pills
+  document.querySelectorAll('.delay-pill').forEach(p => {
+    p.onclick = (e) => {
+      e.stopPropagation();
+      state.notifDelayMins = parseInt(p.dataset.delay);
+      saveState();
+      render();
+    };
+  });
+
+  // Recipients — bind per-row inputs + remove
+  document.querySelectorAll('.recipient-row').forEach(row => {
+    const id = row.dataset.id;
+    const upd = (field, val) => {
+      const r = (state.notifRecipients || []).find(x => x.id === id);
+      if (!r) return;
+      r[field] = val;
+      saveState();
+    };
+    row.querySelector('.r-name').oninput  = (e) => upd('name', e.target.value);
+    row.querySelector('.r-phone').oninput = (e) => upd('phone', e.target.value);
+    row.querySelector('.r-start').oninput = (e) => upd('startRoom', parseInt(e.target.value) || 1);
+    row.querySelector('.r-end').oninput   = (e) => upd('endRoom', parseInt(e.target.value) || 1);
+  });
+  document.querySelectorAll('[data-rm]').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.rm;
+      state.notifRecipients = (state.notifRecipients || []).filter(r => r.id !== id);
+      saveState();
+      render();
+    };
+  });
+  const add = document.getElementById('add-recipient');
+  if (add) add.onclick = (e) => {
+    e.stopPropagation();
+    state.notifRecipients = state.notifRecipients || [];
+    state.notifRecipients.push({ id: makeRecipientId(), name: '', phone: '', startRoom: 1, endRoom: 1 });
+    saveState();
+    render();
+  };
+
+  // Automation toggles
+  document.querySelectorAll('[data-auto]').forEach(t => {
+    t.onclick = (e) => {
+      e.stopPropagation();
+      const id = t.dataset.auto;
+      const s = getAutomationsState();
+      s[id] = !s[id];
+      saveState();
+      render();
+    };
+  });
 }
 
 function renderShippingPanel(facility) {
