@@ -148,6 +148,10 @@
   .tile .atmos-pill.on { background: #1a6b1a; color: white; }
   .tile.attention { border: 2px solid #f5cccc; background: #fff8f7; }
   .tile.attention h4 { color: #c0392b; }
+  .tile.off { border: 1.5px solid #f5e1bf; background: #fffaf2; }
+  .tile.off h4 { color: #b87800; }
+  .tile.off .tile-metric { background: #fff5e1; }
+  .tile.off .m-val.warn { color: #b87800; }
   .tile .reason { font-size: 11px; color: #c0392b; margin-top: 8px; line-height: 1.4; font-weight: 600; }
 
   #map-container { width: 100%; height: 460px; border-radius: 12px; }
@@ -1254,9 +1258,9 @@ function driftDashboardTiles() {
   if (state.view !== 'dashboard' || !state.gridOpen) return;
   const facility = state.facility;
   if (!facility) return;
-  const tiles = document.querySelectorAll('.tile');
-  tiles.forEach((tile, i) => {
-    const room = facility.rooms[i];
+  document.querySelectorAll('.tile').forEach(tile => {
+    const id = tile.dataset.id;
+    const room = facility.rooms.find(r => r.id === id);
     if (!room || room.attentionReason) return;
     const seed = roomSeed(room.id);
     const baseEthy = roomEthylene(room);
@@ -1852,18 +1856,20 @@ function renderDashboard(app) {
                   const o2 = roomO2(r);
                   const co2 = roomCO2(r);
                   const attention = r.attentionReason;
+                  const offState = !attention && !r.atmosOn;
+                  const tileMod = attention ? 'attention' : (offState ? 'off' : '');
+                  const valCls = attention ? 'alert' : (offState ? 'warn' : '');
                   const status = attention ? 'crit' : (r.atmosOn ? 'ok' : 'warn');
                   const badgeText = attention ? 'NEEDS ATTENTION' : (r.atmosOn ? 'At optimal' : 'Operational');
-                  const alertCls = attention ? 'alert' : '';
                   return `
-                    <div class="tile ${attention ? 'attention' : ''}" data-id="${escHtml(r.id)}">
+                    <div class="tile ${tileMod}" data-id="${escHtml(r.id)}">
                       <h4>#${i + 1} · ${escHtml(r.name)}</h4>
                       <div class="crop">${escHtml(crop.displayName)}</div>
                       <div class="tile-metrics">
-                        <div class="tile-metric"><div class="m-lbl">Ethylene</div><div class="m-val ${alertCls}">${ethy.toFixed(3)} <small>ppm</small></div></div>
-                        <div class="tile-metric"><div class="m-lbl">Temp</div><div class="m-val ${alertCls}">${temp}°C</div></div>
-                        <div class="tile-metric"><div class="m-lbl">O₂</div><div class="m-val ${alertCls}">${o2}%</div></div>
-                        <div class="tile-metric"><div class="m-lbl">CO₂</div><div class="m-val ${alertCls}">${co2}%</div></div>
+                        <div class="tile-metric"><div class="m-lbl">Ethylene</div><div class="m-val ${valCls}">${ethy.toFixed(3)} <small>ppm</small></div></div>
+                        <div class="tile-metric"><div class="m-lbl">Temp</div><div class="m-val ${valCls}">${temp}°C</div></div>
+                        <div class="tile-metric"><div class="m-lbl">O₂</div><div class="m-val ${valCls}">${o2}%</div></div>
+                        <div class="tile-metric"><div class="m-lbl">CO₂</div><div class="m-val ${valCls}">${co2}%</div></div>
                       </div>
                       <div class="spark-wrap">
                         ${sparklineSvg(r)}
