@@ -70,7 +70,12 @@
   .frame { background: #0d0d0d; border-radius: 18px; padding: 6px; width: 100%; max-width: 1100px; box-shadow: 0 30px 80px rgba(0,0,0,0.8); margin: 0 auto; }
   .dash { background: #f0f7f0; border-radius: 13px; overflow: hidden; }
   .dash-nav { background: #1a6b1a; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .dash-nav .nav-arrows { display: flex; gap: 4px; margin-right: 8px; }
+  .dash-nav .nav-arrow { background: rgba(255,255,255,0.15); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; transition: background 0.15s; }
+  .dash-nav .nav-arrow:hover:not(:disabled) { background: rgba(255,255,255,0.3); }
+  .dash-nav .nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
   .dash-nav .logo { display: flex; align-items: center; gap: 8px; color: white; font-weight: 700; font-size: 15px; }
+  .dash-nav .logo svg { display: block; }
   .dash-nav .crumbs { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.85); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
   .dash-nav .crumb-dot { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; }
   .dash-nav .crumb-dot.done { background: #4caf50; color: white; }
@@ -393,7 +398,9 @@ const DEFAULT_STATE = {
   aiInput: '',
   wizardDraft: { name: '', hq: '', rooms: [] },
   notifications: [],
-  notifPanelOpen: false
+  notifPanelOpen: false,
+  history: [],
+  historyIdx: -1
 };
 
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -416,11 +423,61 @@ function resetState() {
   render();
 }
 
+let _navFromHistory = false;
+
+function snapshotState() {
+  return {
+    view: state.view,
+    currentRoomId: state.currentRoomId,
+    dashboardView: state.dashboardView
+  };
+}
+
+function applySnapshot(snap) {
+  state.view = snap.view;
+  state.currentRoomId = snap.currentRoomId;
+  state.dashboardView = snap.dashboardView;
+}
+
 function setView(view) {
   state.view = view;
+  if (!_navFromHistory) {
+    // truncate any forward history, push new snapshot
+    state.history = state.history.slice(0, state.historyIdx + 1);
+    state.history.push(snapshotState());
+    state.historyIdx = state.history.length - 1;
+    // cap history length
+    if (state.history.length > 50) {
+      state.history.shift();
+      state.historyIdx--;
+    }
+  }
   saveState();
   render();
 }
+
+function goBack() {
+  if (state.historyIdx <= 0) return;
+  state.historyIdx--;
+  _navFromHistory = true;
+  applySnapshot(state.history[state.historyIdx]);
+  saveState();
+  render();
+  _navFromHistory = false;
+}
+
+function goForward() {
+  if (state.historyIdx >= state.history.length - 1) return;
+  state.historyIdx++;
+  _navFromHistory = true;
+  applySnapshot(state.history[state.historyIdx]);
+  saveState();
+  render();
+  _navFromHistory = false;
+}
+
+function canGoBack()    { return state.historyIdx > 0; }
+function canGoForward() { return state.historyIdx < state.history.length - 1; }
 
 function makeRoomId() {
   return 'r_' + Math.random().toString(36).slice(2, 9);
@@ -428,6 +485,36 @@ function makeRoomId() {
 
 function escHtml(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+const PHT_LOGO_SVG = `
+<svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+  <defs>
+    <linearGradient id="pht-leaf-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7ed957"/>
+      <stop offset="100%" stop-color="#2e9b2e"/>
+    </linearGradient>
+  </defs>
+  <path d="M5 27 C5 13, 14 4, 28 4 C28 19, 19 27, 5 27 Z" fill="url(#pht-leaf-grad)"/>
+  <path d="M5 27 L23 9" stroke="rgba(255,255,255,0.55)" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M11 23 L17 17" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M16 26 L21 21" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" stroke-linecap="round"/>
+</svg>`;
+
+function navArrowsHtml() {
+  const back = canGoBack() ? '' : 'disabled';
+  const fwd  = canGoForward() ? '' : 'disabled';
+  return `<div class="nav-arrows">
+    <button class="nav-arrow" id="nav-back" ${back} title="Back">‹</button>
+    <button class="nav-arrow" id="nav-fwd" ${fwd} title="Forward">›</button>
+  </div>`;
+}
+
+function bindNavArrows() {
+  const b = document.getElementById('nav-back');
+  const f = document.getElementById('nav-fwd');
+  if (b) b.onclick = goBack;
+  if (f) f.onclick = goForward;
 }
 
 // === CROP MATH HELPERS ===
@@ -945,7 +1032,8 @@ function renderDashboard(app) {
     <div class="frame">
       <div class="dash">
         <div class="dash-nav">
-          <div class="logo">🌱 PostHarvest</div>
+          ${navArrowsHtml()}
+          <div class="logo">${PHT_LOGO_SVG} PostHarvest</div>
           <div class="crumbs">
             <span>LOCATIONS</span><span class="crumb-dot done">✓</span>
             <span class="crumb-line"></span>
@@ -1007,6 +1095,7 @@ function renderDashboard(app) {
   `;
 
   document.getElementById('reset-btn').onclick = () => { if (confirm('Reset demo to splash?')) resetState(); };
+  bindNavArrows();
   document.getElementById('t-map').onclick = () => { state.dashboardView = 'map'; state.notifPanelOpen = false; saveState(); render(); };
   document.getElementById('t-grid').onclick = () => { state.dashboardView = 'grid'; state.notifPanelOpen = false; saveState(); render(); };
   document.getElementById('add-room').onclick = () => {
@@ -1153,7 +1242,8 @@ function renderRoom(app) {
     <div class="frame">
       <div class="dash">
         <div class="dash-nav">
-          <div class="logo">🌱 PostHarvest</div>
+          ${navArrowsHtml()}
+          <div class="logo">${PHT_LOGO_SVG} PostHarvest</div>
           <div class="crumbs">
             <span>LOCATIONS</span><span class="crumb-dot done">✓</span>
             <span class="crumb-line"></span>
@@ -1231,6 +1321,7 @@ function renderRoom(app) {
   `;
 
   document.getElementById('reset-btn').onclick = () => { if (confirm('Reset demo to splash?')) resetState(); };
+  bindNavArrows();
   document.getElementById('back-to-fac').onclick = () => { state.currentRoomId = null; setView('dashboard'); };
   document.querySelectorAll('[data-stub]').forEach(el => el.onclick = () => alert('"' + el.textContent + '" tab — coming soon'));
   document.getElementById('atmos-toggle').onclick = () => {
