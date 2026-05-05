@@ -676,7 +676,7 @@ const DEFAULT_STATE = {
   toast: null,
   shippingPanelOpen: false,
   orderMenuOpen: false,
-  orderBy: 'ethylene-desc',
+  orderBy: 'default',
   integrationsPanelOpen: false,
   smsPhone: '',
   _smsDraft: '',
@@ -904,6 +904,7 @@ const TOP_3_ATTENTION_CAUSES = [
 ];
 
 const ORDER_OPTIONS = [
+  { key: 'default',       label: 'Default order' },
   { key: 'overall',       label: 'Overall Health (all factors)' },
   { key: 'ethylene-asc',  label: 'Ethylene — lowest to highest' },
   { key: 'ethylene-desc', label: 'Ethylene — highest to lowest' },
@@ -920,6 +921,7 @@ function pseudoPressure(room) {
 
 function sortRoomsByOrder(rooms, key) {
   const arr = rooms.map((r, i) => ({ room: r, origIdx: i }));
+  if (!key || key === 'default') return arr;
   switch (key) {
     case 'ethylene-asc':
       return arr.sort((a, b) => roomNaturalEthylene(a.room) - roomNaturalEthylene(b.room));
@@ -1716,7 +1718,7 @@ function renderDashboard(app) {
           <div class="actions">
             <button class="intg-btn" id="intg-btn" title="Notification channels">Notifications</button>
             <div class="order-wrap">
-              <button class="ship-btn" id="ship-btn" title="Order rooms by metric">Order ▾</button>
+              <button class="ship-btn" id="ship-btn" title="Order rooms by metric">${state.orderBy && state.orderBy !== 'default' ? 'Order: ' + escHtml((ORDER_OPTIONS.find(o => o.key === state.orderBy) || {}).label || '').replace(/ — .*/, '') + ' ▾' : 'Order ▾'}</button>
               ${state.orderMenuOpen ? `
                 <div class="order-menu" id="order-menu">
                   ${ORDER_OPTIONS.map(o => `
@@ -1750,7 +1752,9 @@ function renderDashboard(app) {
             </div>
             <div class="dash-section-body">
               <div class="grid-tiles">
-                ${facility.rooms.map((r, i) => {
+                ${sortRoomsByOrder(facility.rooms, state.orderBy).map((entry) => {
+                  const r = entry.room;
+                  const i = entry.origIdx;
                   const crop = CROPS[r.cropId] || { displayName: '(unknown)' };
                   const ethy = roomEthylene(r);
                   const temp = roomTemp(r);
@@ -1837,7 +1841,6 @@ function renderDashboard(app) {
       e.stopPropagation();
       state.orderBy = el.dataset.order;
       state.orderMenuOpen = false;
-      state.shippingPanelOpen = true;
       saveState();
       render();
     };
