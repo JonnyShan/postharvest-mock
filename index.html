@@ -230,6 +230,55 @@
   .splash-trust .lbl { color: #6b8c63; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
   .splash-trust .pills { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
   .splash-trust .pill { background: rgba(255,255,255,0.06); border: 1px solid rgba(168,197,160,0.25); color: #c8dcc4; padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 600; }
+
+  /* === SPARKLINE === */
+  .spark-wrap { margin-top: 10px; }
+  .spark { display: block; width: 100%; height: 30px; }
+  .spark-lbl { font-size: 9px; color: #888; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 2px; font-weight: 600; }
+
+  /* === MOBILE RESPONSIVE === */
+  @media (max-width: 800px) {
+    #app { padding: 8px; }
+    .frame { padding: 4px; border-radius: 12px; max-width: 100%; }
+    .dash { border-radius: 9px; }
+    .dash-nav { padding: 8px 10px; flex-wrap: wrap; gap: 8px; }
+    .dash-nav .crumbs { display: none; }
+    .dash-nav .logo { font-size: 13px; }
+    .dash-nav .user { gap: 6px; flex-wrap: wrap; }
+    .dash-nav .reset, .inject-btn { padding: 5px 9px; font-size: 10px; }
+    .dash-nav .user > span { display: none; }
+    .nav-arrow { width: 26px; height: 26px; }
+    .kpi-strip { grid-template-columns: 1fr; padding: 12px 14px; gap: 8px; }
+    .kpi-card { padding: 10px 14px; }
+    .kpi-card .val { font-size: 22px; }
+    .fac-header { padding: 14px 16px; }
+    .fac-header .title h2 { font-size: 18px; }
+    .fac-header .actions { width: 100%; flex-wrap: wrap; gap: 6px; }
+    .fac-body { padding: 14px; }
+    .grid-tiles { grid-template-columns: 1fr; gap: 12px; }
+    .tile { padding: 14px; }
+    .tile h4 { font-size: 14px; }
+    #map-container { height: 360px; }
+    .ai-toast { left: 12px; right: 12px; bottom: 12px; width: auto; }
+    .notif-panel { width: calc(100vw - 32px); right: 16px; }
+    /* Splash */
+    .splash h1 { font-size: 24px; }
+    .splash-cards { grid-template-columns: 1fr; gap: 14px; }
+    .splash-card { padding: 24px 18px; }
+    /* Room view */
+    .room-body { grid-template-columns: 1fr; }
+    .crop-strip { padding: 10px 14px; gap: 12px; }
+    .atmos-bar { padding: 10px 14px; }
+    .tabs-row { padding: 0 12px; flex-wrap: wrap; }
+    .tabs-row .room-name { font-size: 15px; padding: 10px 0; }
+    .tabs-row .tab { padding: 8px 8px; font-size: 10px; }
+    .tabs-row .back { padding: 10px 0; }
+  }
+  @media (max-width: 500px) {
+    .kpi-card .val { font-size: 20px; }
+    .fac-header .title h2 { font-size: 16px; }
+    .nav-arrows { gap: 2px; }
+  }
 </style>
 </head>
 <body>
@@ -722,6 +771,96 @@ function acceptToast() {
   render();
 }
 
+// === SPARKLINES ===
+function roomSparkline(room) {
+  const seed = roomSeed(room.id);
+  const pts = [];
+  for (let i = 0; i < 24; i++) {
+    const t = i / 23;
+    const noise = Math.sin(i * 1.7 + seed * 31) * 0.06;
+    let base;
+    if (room.attentionReason) base = 0.30 + i * 0.025 + noise;        // trending up = bad
+    else if (room.atmosOn)    base = 0.40 + Math.sin(t * 3 + seed * 5) * 0.10 + noise;
+    else                      base = 0.70 + Math.sin(t * 2 + seed * 7) * 0.08 + noise;
+    pts.push(Math.max(0.05, Math.min(0.95, base)));
+  }
+  return pts;
+}
+
+function sparklineSvg(room) {
+  const pts = roomSparkline(room);
+  const w = 200, h = 30;
+  const color  = room.attentionReason ? '#c0392b' : (room.atmosOn ? '#2e7d32' : '#b87800');
+  const fillC  = room.attentionReason ? 'rgba(192,57,43,0.12)' : (room.atmosOn ? 'rgba(46,125,50,0.12)' : 'rgba(184,120,0,0.12)');
+  const xy = pts.map((p, i) => [(i / (pts.length - 1)) * w, h - p * h]);
+  const lineD = xy.map((pt, i) => (i === 0 ? 'M' : 'L') + pt[0].toFixed(1) + ' ' + pt[1].toFixed(1)).join(' ');
+  const fillD = lineD + ` L ${w} ${h} L 0 ${h} Z`;
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+    <path d="${fillD}" fill="${fillC}" stroke="none"/>
+    <path d="${lineD}" stroke="${color}" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// === KPI COUNT-UP ===
+let _lastKpiVals = {};
+
+function fmtKpi(val, format) {
+  if (format === 'money') return '$' + Math.round(val).toLocaleString();
+  if (format === 'tons')  return (Math.round(val * 10) / 10) + ' tons';
+  if (format === 'pct')   return Math.round(val) + '%';
+  return Math.round(val).toString();
+}
+
+function animateKpis() {
+  document.querySelectorAll('.kpi-card .val[data-target]').forEach(el => {
+    const key = el.dataset.key;
+    const target = parseFloat(el.dataset.target);
+    const format = el.dataset.format;
+    const from = _lastKpiVals[key] != null ? _lastKpiVals[key] : 0;
+    const start = performance.now();
+    const dur = 700;
+    function step(now) {
+      const t = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const val = from + (target - from) * eased;
+      el.textContent = fmtKpi(val, format);
+      if (t < 1) requestAnimationFrame(step);
+      else _lastKpiVals[key] = target;
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+function resetKpiAnims() { _lastKpiVals = {}; }
+
+// === DRIFT ===
+function driftDashboardTiles() {
+  if (state.view !== 'dashboard' || state.dashboardView !== 'grid') return;
+  const facility = state.facility;
+  if (!facility) return;
+  const tiles = document.querySelectorAll('.tile');
+  tiles.forEach((tile, i) => {
+    const room = facility.rooms[i];
+    if (!room || room.attentionReason) return;
+    const seed = roomSeed(room.id);
+    const baseEthy = roomEthylene(room);
+    const baseTemp = roomTemp(room);
+    const baseO2 = roomO2(room);
+    const baseCO2 = roomCO2(room);
+    const now = Date.now();
+    const ethy = baseEthy * (1 + Math.sin(now / 1500 + seed * 11) * 0.02);
+    const temp = baseTemp + Math.sin(now / 1700 + seed * 7) * 0.08;
+    const o2   = baseO2 + Math.sin(now / 1900 + seed * 13) * 0.04;
+    const co2  = baseCO2 + Math.sin(now / 2100 + seed * 17) * 0.025;
+    const metrics = tile.querySelectorAll('.m-val');
+    if (metrics.length !== 4) return;
+    metrics[0].innerHTML = ethy.toFixed(3) + ' <small>ppm</small>';
+    metrics[1].textContent = temp.toFixed(1) + '°C';
+    metrics[2].textContent = o2.toFixed(1) + '%';
+    metrics[3].textContent = co2.toFixed(1) + '%';
+  });
+}
+
 function computeBarFills(room) {
   const crop = CROPS[room.cropId];
   const on = room.atmosOn;
@@ -1210,17 +1349,17 @@ function renderDashboard(app) {
         <div class="kpi-strip">
           <div class="kpi-card">
             <div class="lbl">Saved this month</div>
-            <div class="val">$${kpis.savings.toLocaleString()}</div>
+            <div class="val" data-key="savings" data-target="${kpis.savings}" data-format="money">$0</div>
             <div class="delta">↑ vs Atmos OFF baseline</div>
           </div>
           <div class="kpi-card">
             <div class="lbl">Spoilage avoided</div>
-            <div class="val">${kpis.tons} tons</div>
+            <div class="val" data-key="tons" data-target="${kpis.tons}" data-format="tons">0 tons</div>
             <div class="delta">≈ ${Math.round(kpis.tons * 1800).toLocaleString()} units shipped</div>
           </div>
           <div class="kpi-card">
             <div class="lbl">Energy delta</div>
-            <div class="val">${kpis.energy}%</div>
+            <div class="val" data-key="energy" data-target="${kpis.energy}" data-format="pct">0%</div>
             <div class="delta">vs last month</div>
           </div>
         </div>
@@ -1262,6 +1401,10 @@ function renderDashboard(app) {
                       <div class="tile-metric"><div class="m-lbl">Temp</div><div class="m-val ${alertCls}">${temp}°C</div></div>
                       <div class="tile-metric"><div class="m-lbl">O₂</div><div class="m-val ${alertCls}">${o2}%</div></div>
                       <div class="tile-metric"><div class="m-lbl">CO₂</div><div class="m-val ${alertCls}">${co2}%</div></div>
+                    </div>
+                    <div class="spark-wrap">
+                      ${sparklineSvg(r)}
+                      <div class="spark-lbl">24h trend</div>
                     </div>
                     <div style="margin-top:10px;">
                       <span class="badge ${status}">${badgeText}</span>
@@ -1321,6 +1464,8 @@ function renderDashboard(app) {
   if (state.dashboardView === 'map') {
     setTimeout(() => initFacilityMap(facility), 0);
   }
+
+  animateKpis();
 }
 
 function renderToast(toast) {
@@ -1717,6 +1862,11 @@ let _liveTickInterval = null;
 function startLiveTick() {
   if (_liveTickInterval) clearInterval(_liveTickInterval);
   _liveTickInterval = setInterval(() => {
+    if (document.hidden) return;
+    if (state.view === 'dashboard') {
+      driftDashboardTiles();
+      return;
+    }
     if (state.view !== 'room') return;
     if (_atmosAnimating) return;
     const facility = state.facility;
