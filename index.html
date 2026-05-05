@@ -9,25 +9,1113 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #1a1a1a; min-height: 100vh; font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a1a; }
   #app { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+
+  /* === SPLASH === */
+  .splash { width: 100%; max-width: 880px; }
+  .splash h1 { color: #f0f7f0; text-align: center; margin-bottom: 8px; font-size: 32px; font-weight: 700; }
+  .splash .subtitle { color: #a8c5a0; text-align: center; margin-bottom: 40px; }
+  .splash-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .splash-card { background: #f0f7f0; border-radius: 16px; padding: 36px 28px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; border: 2px solid transparent; }
+  .splash-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.4); border-color: #2e7d32; }
+  .splash-card .icon { font-size: 36px; margin-bottom: 12px; }
+  .splash-card h3 { color: #1a6b1a; margin-bottom: 8px; font-size: 20px; }
+  .splash-card p { color: #555; font-size: 14px; line-height: 1.5; }
+
+  /* === AI LOOKUP === */
+  .ai-panel { background: #f0f7f0; border-radius: 16px; padding: 36px; width: 100%; max-width: 640px; }
+  .ai-panel h2 { color: #1a6b1a; margin-bottom: 8px; }
+  .ai-panel .hint { color: #666; font-size: 13px; margin-bottom: 20px; }
+  .ai-input-row { display: flex; gap: 12px; }
+  .ai-input { flex: 1; padding: 14px 16px; border-radius: 10px; border: 2px solid #c8d8c4; font-size: 15px; outline: none; background: #fff; color: #1a1a1a; }
+  .ai-input:focus { border-color: #2e7d32; }
+  .btn { padding: 14px 24px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; font-size: 14px; }
+  .btn-primary { background: #2e7d32; color: #fff; }
+  .btn-primary:hover { background: #1a6b1a; }
+  .btn-secondary { background: #fff; color: #2e7d32; border: 1px solid #2e7d32; }
+  .btn-link { background: transparent; color: #555; text-decoration: underline; }
+  .spinner-block { text-align: center; padding: 40px 20px; }
+  .spinner { width: 48px; height: 48px; border: 4px solid #c8d8c4; border-top-color: #2e7d32; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner-status { color: #1a6b1a; font-weight: 600; }
+  .reveal-card { background: #fff; border-radius: 12px; padding: 24px; margin-top: 20px; }
+  .reveal-card .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; gap: 12px; }
+  .reveal-card .row:last-child { border-bottom: none; }
+  .reveal-card .row .label { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .reveal-card .row .value { color: #1a1a1a; font-weight: 600; text-align: right; }
+  .reveal-actions { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .not-found { text-align: center; color: #c0392b; padding: 24px; background: #fff5f4; border-radius: 10px; margin-top: 16px; }
+
+  /* === WIZARD STEP 2 === */
+  .rooms-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .room-row { background: #fff; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .room-row .info { font-size: 14px; }
+  .room-row .info b { color: #1a6b1a; }
+  .room-row .info small { color: #888; display: block; margin-top: 2px; }
+  .room-row .remove { color: #c0392b; cursor: pointer; font-size: 12px; background: transparent; border: none; }
+  .add-room-form { background: #fff; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .add-room-form .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .crop-autocomplete { position: relative; }
+  .crop-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #c8d8c4; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 10; }
+  .crop-suggestions .item { padding: 10px 12px; cursor: pointer; font-size: 13px; }
+  .crop-suggestions .item:hover, .crop-suggestions .item.active { background: #e8f5e9; color: #1a6b1a; }
+
+  /* === FETCH ANIMATION === */
+  .fetch-screen { text-align: center; color: #f0f7f0; }
+  .fetch-screen .uc-davis { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #a8c5a0; margin-bottom: 16px; }
+  .fetch-screen h2 { font-size: 24px; font-weight: 600; margin-bottom: 32px; }
+  .fetch-screen .spinner { border-color: #2a3a2a; border-top-color: #4caf50; }
+  .fetch-screen .room-tally { color: #a8c5a0; font-size: 13px; margin-top: 24px; }
+
+  /* === DASHBOARD FRAME === */
+  .frame { background: #0d0d0d; border-radius: 18px; padding: 6px; width: 100%; max-width: 1100px; box-shadow: 0 30px 80px rgba(0,0,0,0.8); margin: 0 auto; }
+  .dash { background: #f0f7f0; border-radius: 13px; overflow: hidden; }
+  .dash-nav { background: #1a6b1a; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .dash-nav .logo { display: flex; align-items: center; gap: 8px; color: white; font-weight: 700; font-size: 15px; }
+  .dash-nav .crumbs { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.85); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  .dash-nav .crumb-dot { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; }
+  .dash-nav .crumb-dot.done { background: #4caf50; color: white; }
+  .dash-nav .crumb-dot.active { background: #4db6ac; color: white; }
+  .dash-nav .crumb-dot.todo { background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); }
+  .dash-nav .crumb-line { width: 24px; height: 2px; background: rgba(255,255,255,0.3); }
+  .dash-nav .user { display: flex; align-items: center; gap: 8px; color: white; font-size: 12px; }
+  .dash-nav .reset { background: rgba(255,255,255,0.15); color: white; border: none; padding: 6px 12px; border-radius: 16px; font-size: 11px; cursor: pointer; }
+  .dash-nav .reset:hover { background: rgba(255,255,255,0.25); }
+
+  /* === FACILITY HEADER === */
+  .fac-header { padding: 20px 24px; background: white; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e0e0e0; gap: 16px; flex-wrap: wrap; }
+  .fac-header .title h2 { font-size: 22px; color: #1a1a1a; }
+  .fac-header .title .hq { color: #888; font-size: 13px; margin-top: 2px; }
+  .fac-header .actions { display: flex; gap: 10px; align-items: center; }
+  .toggle { display: inline-flex; background: #f0f0f0; border-radius: 20px; padding: 3px; }
+  .toggle button { background: transparent; border: none; padding: 6px 16px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 16px; color: #888; }
+  .toggle button.active { background: #2e7d32; color: white; }
+  .add-room-btn { background: #2e7d32; color: white; border: none; padding: 8px 16px; border-radius: 18px; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .add-room-btn:hover { background: #1a6b1a; }
+
+  /* === FACILITY BODY === */
+  .fac-body { padding: 24px; min-height: 480px; background: #f0f7f0; }
+  .grid-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .tile { background: white; border-radius: 12px; padding: 18px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+  .tile:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+  .tile h4 { font-size: 15px; color: #1a1a1a; margin-bottom: 4px; }
+  .tile .crop { color: #1a6b1a; font-size: 12px; margin-bottom: 12px; font-weight: 600; }
+  .tile .ethy { font-size: 28px; font-weight: 700; color: #1a1a1a; }
+  .tile .ethy small { font-size: 12px; font-weight: 500; color: #888; }
+  .tile .badge { display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 8px; }
+  .badge.ok { background: #e8f5e9; color: #1a6b1a; }
+  .badge.warn { background: #fff5e1; color: #b87800; }
+  .badge.crit { background: #fff5f4; color: #c0392b; }
+  .tile .atmos-pill { display: inline-block; margin-top: 8px; margin-left: 8px; font-size: 10px; padding: 4px 10px; border-radius: 10px; background: #f0f0f0; color: #888; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .tile .atmos-pill.on { background: #1a6b1a; color: white; }
+
+  #map-container { width: 100%; height: 460px; border-radius: 12px; }
+  .leaflet-container { font-family: 'Segoe UI', sans-serif; }
+
+  /* === ROOM === */
+  .tabs-row { background: white; padding: 0 24px; display: flex; align-items: center; border-bottom: 1px solid #e0e0e0; gap: 4px; }
+  .tabs-row .room-name { font-size: 18px; font-weight: 700; color: #1a1a1a; margin-right: 16px; padding: 14px 0; }
+  .tabs-row .tab { padding: 14px 14px; font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; cursor: pointer; color: #888; }
+  .tabs-row .tab.active { color: white; background: #2e7d32; border-radius: 18px; margin: 6px 4px; padding: 8px 16px; }
+  .tabs-row .back { margin-left: auto; padding: 14px 0; color: #888; cursor: pointer; font-size: 13px; }
+  .tabs-row .back:hover { color: #2e7d32; }
+  .crop-strip { padding: 14px 24px; background: white; display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #f0f0f0; font-size: 12px; flex-wrap: wrap; }
+  .crop-strip .col { display: flex; align-items: baseline; gap: 6px; }
+  .crop-strip .col .lbl { color: #888; font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .crop-strip .col .val { color: #1a1a1a; font-weight: 600; }
+  .crop-strip .col .val.alert { color: #c0392b; font-weight: 700; }
+  .crop-strip .ca-pill { background: #2e7d32; color: white; padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+  .crop-strip .note { color: #888; font-style: italic; font-size: 11px; margin-left: auto; max-width: 240px; }
+  .atmos-bar { background: #e8f5e9; padding: 12px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .atmos-bar .demo-pill { background: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; color: #888; letter-spacing: 1px; }
+  .atmos-toggle { background: white; padding: 8px 18px; border-radius: 22px; border: 2px solid #2e7d32; cursor: pointer; font-weight: 700; font-size: 13px; color: #2e7d32; display: inline-flex; align-items: center; gap: 8px; transition: background 0.3s, color 0.3s; }
+  .atmos-toggle.on { background: #2e7d32; color: white; }
+  .atmos-status { font-size: 13px; color: #1a6b1a; }
+  .atmos-status.warn { color: #b87800; }
+  .room-body { padding: 20px 24px; display: grid; grid-template-columns: 1fr 240px; gap: 16px; background: #f0f7f0; }
+  .bars-card { background: white; border-radius: 10px; padding: 18px; }
+  .bar-row { display: grid; grid-template-columns: 110px 1fr 90px; gap: 12px; align-items: center; padding: 10px 0; }
+  .bar-row .lbl { font-size: 11px; color: #888; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600; }
+  .bar-track { background: #f0f0f0; height: 14px; border-radius: 7px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 7px; transition: width 1.2s cubic-bezier(.2,.7,.3,1), background 1.2s; }
+  .bar-row .target { font-size: 11px; color: #888; text-align: right; }
+  .stat-card { background: white; border-radius: 10px; padding: 16px; }
+  .stat-card .ethy-big { font-size: 36px; font-weight: 700; color: #1a1a1a; line-height: 1; margin-top: 6px; }
+  .stat-card .ethy-big small { font-size: 12px; color: #888; font-weight: 500; }
+  .stat-card .label-row { font-size: 10px; color: #888; letter-spacing: 1px; text-transform: uppercase; }
+  .stat-card .target-line { color: #888; font-size: 11px; margin-top: 4px; }
+  .stat-card .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin-top: 14px; }
+  .mini { font-size: 12px; }
+  .mini .v { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+  .mini .l { color: #888; font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 2px; }
+  .mini .t { color: #888; font-size: 9px; margin-top: 2px; }
+  .system-status-card { background: white; border-radius: 10px; padding: 14px; margin-top: 12px; text-align: center; }
+  .system-status-card .lbl { font-size: 10px; color: #888; letter-spacing: 1px; text-transform: uppercase; }
+  .system-status-card .pill { background: #2e7d32; color: white; padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 700; margin-top: 6px; display: inline-block; }
+  .system-status-card .pill.warn { background: #b87800; }
+  .chart-card { background: white; border-radius: 10px; padding: 16px; margin: 16px 24px 24px; }
 </style>
 </head>
 <body>
 <div id="app">Loading…</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-  // === CONSTANTS ===
-  // (filled in by later tasks)
+// === CONSTANTS ===
+const CROPS = {
+  'apple-gala':       { displayName: 'Apples — Gala',           tempRange: '0–1°C',   humidityRange: '90–95%', ethyleneThreshold: '<0.1 ppm', o2Range: '1.5–2%',  co2Range: '1.5–2%',  pressure: '1.01 atm', sensitivity: 'Highly sensitive. Ethylene scrubbing recommended.' },
+  'apple-granny':     { displayName: 'Apples — Granny Smith',   tempRange: '0–1°C',   humidityRange: '90–95%', ethyleneThreshold: '<0.1 ppm', o2Range: '1–2%',    co2Range: '1–3%',    pressure: '1.01 atm', sensitivity: 'Highly sensitive. Ethylene scrubbing recommended.' },
+  'apple-fuji':       { displayName: 'Apples — Fuji',           tempRange: '0–1°C',   humidityRange: '90–95%', ethyleneThreshold: '<0.1 ppm', o2Range: '1.5–2%',  co2Range: '1–2%',    pressure: '1.01 atm', sensitivity: 'Highly sensitive. Ethylene scrubbing recommended.' },
+  'apple-pinklady':   { displayName: 'Apples — Pink Lady',      tempRange: '0–1°C',   humidityRange: '90–95%', ethyleneThreshold: '<0.1 ppm', o2Range: '1.5–2%',  co2Range: '1–1.5%',  pressure: '1.01 atm', sensitivity: 'Highly sensitive. Ethylene scrubbing recommended.' },
+  'apple-rockit':     { displayName: 'Apples — Rockit',         tempRange: '0.5°C',   humidityRange: '90–95%', ethyleneThreshold: '<0.1 ppm', o2Range: '1.5–2%',  co2Range: '1.5–2%',  pressure: '1.01 atm', sensitivity: 'Highly sensitive. Ethylene scrubbing recommended.' },
+  'pear-bartlett':    { displayName: 'Pears — Bartlett',        tempRange: '-1–0°C',  humidityRange: '90–95%', ethyleneThreshold: '<0.1 ppm', o2Range: '1–3%',    co2Range: '0–1%',    pressure: '1.01 atm', sensitivity: 'Sensitive to ethylene. Ripening accelerates rapidly.' },
+  'pear-bosc':        { displayName: 'Pears — Bosc',            tempRange: '-1–0°C',  humidityRange: '90–95%', ethyleneThreshold: '<0.1 ppm', o2Range: '2–3%',    co2Range: '0.5–1%',  pressure: '1.01 atm', sensitivity: 'Sensitive to ethylene. Ripening accelerates rapidly.' },
+  'banana':           { displayName: 'Bananas',                  tempRange: '13–14°C', humidityRange: '90–95%', ethyleneThreshold: '<1 ppm',   o2Range: '2–5%',    co2Range: '2–5%',    pressure: '1.01 atm', sensitivity: 'Chilling injury below 13°C.' },
+  'orange-navel':     { displayName: 'Oranges — Navel',         tempRange: '3–8°C',   humidityRange: '85–90%', ethyleneThreshold: '<5 ppm',   o2Range: '5–10%',   co2Range: '0–5%',    pressure: '1.01 atm', sensitivity: 'Moderate ethylene tolerance.' },
+  'mandarin':         { displayName: 'Mandarins',                tempRange: '5–8°C',   humidityRange: '90–95%', ethyleneThreshold: '<5 ppm',   o2Range: '5–10%',   co2Range: '0–5%',    pressure: '1.01 atm', sensitivity: 'Moderate ethylene tolerance.' },
+  'lemon':            { displayName: 'Lemons',                   tempRange: '10–13°C', humidityRange: '85–90%', ethyleneThreshold: '<5 ppm',   o2Range: '5–10%',   co2Range: '0–10%',   pressure: '1.01 atm', sensitivity: 'Chilling injury below 10°C.' },
+  'mango-calypso':    { displayName: 'Mangoes — Calypso',       tempRange: '13°C',    humidityRange: '85–90%', ethyleneThreshold: '<1 ppm',   o2Range: '3–5%',    co2Range: '5–8%',    pressure: '1.01 atm', sensitivity: 'Tropical — chilling injury below 13°C.' },
+  'avocado-hass':     { displayName: 'Avocados — Hass',          tempRange: '5–7°C',   humidityRange: '90–95%', ethyleneThreshold: '<0.5 ppm', o2Range: '2–5%',    co2Range: '3–10%',   pressure: '1.01 atm', sensitivity: 'Sensitive to ethylene. Ripens rapidly off-tree.' },
+  'kiwifruit-green':  { displayName: 'Kiwifruit — Green',        tempRange: '0°C',     humidityRange: '90–95%', ethyleneThreshold: '<0.03 ppm',o2Range: '1–2%',    co2Range: '3–5%',    pressure: '1.01 atm', sensitivity: 'Extremely sensitive. <0.03 ppm ethylene critical.' },
+  'strawberry':       { displayName: 'Strawberries',             tempRange: '0°C',     humidityRange: '90–95%', ethyleneThreshold: '<2 ppm',   o2Range: '5–10%',   co2Range: '15–20%',  pressure: '1.01 atm', sensitivity: 'High CO₂ inhibits decay. Tolerates elevated CO₂.' },
+  'blueberry':        { displayName: 'Blueberries',              tempRange: '0°C',     humidityRange: '90–95%', ethyleneThreshold: '<2 ppm',   o2Range: '5–10%',   co2Range: '12–15%',  pressure: '1.01 atm', sensitivity: 'High CO₂ inhibits decay.' },
+  'raspberry':        { displayName: 'Raspberries',              tempRange: '0°C',     humidityRange: '90–95%', ethyleneThreshold: '<2 ppm',   o2Range: '5–10%',   co2Range: '15–20%',  pressure: '1.01 atm', sensitivity: 'High CO₂ inhibits decay. Very perishable.' },
+  'blackberry':       { displayName: 'Blackberries',             tempRange: '0°C',     humidityRange: '90–95%', ethyleneThreshold: '<2 ppm',   o2Range: '5–10%',   co2Range: '15–20%',  pressure: '1.01 atm', sensitivity: 'High CO₂ inhibits decay.' },
+  'cherry':           { displayName: 'Cherries',                 tempRange: '-1–0°C',  humidityRange: '90–95%', ethyleneThreshold: '<0.1 ppm', o2Range: '3–10%',   co2Range: '10–15%',  pressure: '1.01 atm', sensitivity: 'High CO₂ maintains firmness.' },
+  'peach':            { displayName: 'Peaches',                  tempRange: '-0.5°C',  humidityRange: '90–95%', ethyleneThreshold: '<0.1 ppm', o2Range: '1–2%',    co2Range: '3–5%',    pressure: '1.01 atm', sensitivity: 'Internal breakdown risk above 0°C.' },
+  'grape-table':      { displayName: 'Grapes — Table',           tempRange: '-1–0°C',  humidityRange: '90–95%', ethyleneThreshold: '<0.5 ppm', o2Range: '2–5%',    co2Range: '1–3%',    pressure: '1.01 atm', sensitivity: 'SO₂ fumigation common. CA storage extends life.' }
+};
 
-  // === STATE ===
-  let state = { view: 'splash' };
+const COMPANIES = [
+  {
+    matchKeys: ['rockit'],
+    displayName: 'Rockit Apple',
+    hq: "Hawke's Bay, NZ",
+    lat: -39.49, lng: 176.91,
+    rooms: [
+      { name: 'Rockit Room 1', address: '12 Apple Way, Hastings', lat: -39.49, lng: 176.91, cropId: 'apple-rockit' },
+      { name: 'Rockit Room 2', address: '12 Apple Way, Hastings', lat: -39.50, lng: 176.92, cropId: 'apple-rockit' },
+      { name: 'Rockit Room 3', address: '14 Apple Way, Hastings', lat: -39.48, lng: 176.93, cropId: 'apple-rockit' },
+      { name: 'Rockit Room 4', address: '14 Apple Way, Hastings', lat: -39.49, lng: 176.93, cropId: 'apple-rockit' }
+    ]
+  },
+  {
+    matchKeys: ['tru cape', 'trucape', 'tru-cape'],
+    displayName: 'Tru Cape',
+    hq: 'Ceres, South Africa',
+    lat: -33.37, lng: 19.31,
+    rooms: [
+      { name: 'Ceres CA-1',  address: 'Ceres Pack Hub',  lat: -33.37, lng: 19.31, cropId: 'apple-gala' },
+      { name: 'Ceres CA-2',  address: 'Ceres Pack Hub',  lat: -33.38, lng: 19.32, cropId: 'apple-gala' },
+      { name: 'Ceres CA-3',  address: 'Ceres Pack Hub',  lat: -33.36, lng: 19.30, cropId: 'apple-granny' },
+      { name: 'Ceres CA-4',  address: 'Ceres Pack Hub',  lat: -33.37, lng: 19.30, cropId: 'apple-granny' },
+      { name: 'Pear Room A', address: 'Ceres Pack Hub',  lat: -33.38, lng: 19.31, cropId: 'pear-bosc' },
+      { name: 'Pear Room B', address: 'Ceres Pack Hub',  lat: -33.36, lng: 19.32, cropId: 'pear-bosc' }
+    ]
+  },
+  {
+    matchKeys: ['calypso'],
+    displayName: 'Calypso Mango',
+    hq: 'Bowen, QLD AU',
+    lat: -20.02, lng: 148.24,
+    rooms: [
+      { name: 'Bowen Mango 1', address: 'Bowen Packshed', lat: -20.02, lng: 148.24, cropId: 'mango-calypso' },
+      { name: 'Bowen Mango 2', address: 'Bowen Packshed', lat: -20.03, lng: 148.25, cropId: 'mango-calypso' },
+      { name: 'Bowen Mango 3', address: 'Bowen Packshed', lat: -20.01, lng: 148.23, cropId: 'mango-calypso' }
+    ]
+  },
+  {
+    matchKeys: ['costa'],
+    displayName: 'Costa Group',
+    hq: 'Mildura, VIC AU',
+    lat: -34.21, lng: 142.13,
+    rooms: [
+      { name: 'Mildura Citrus 1',  address: 'Mildura Hub',     lat: -34.21, lng: 142.13, cropId: 'orange-navel' },
+      { name: 'Mildura Citrus 2',  address: 'Mildura Hub',     lat: -34.22, lng: 142.14, cropId: 'orange-navel' },
+      { name: 'Berry Room',        address: 'Corindi NSW',     lat: -30.04, lng: 153.21, cropId: 'blueberry' },
+      { name: 'Avocado Room',      address: 'Atherton QLD',    lat: -17.27, lng: 145.48, cropId: 'avocado-hass' },
+      { name: 'Avocado Room 2',    address: 'Atherton QLD',    lat: -17.27, lng: 145.49, cropId: 'avocado-hass' }
+    ]
+  },
+  {
+    matchKeys: ['driscoll'],
+    displayName: "Driscoll's",
+    hq: 'Watsonville, CA US',
+    lat: 36.91, lng: -121.76,
+    rooms: [
+      { name: 'Watsonville Strawberry 1', address: 'Watsonville Cooler', lat: 36.91, lng: -121.76, cropId: 'strawberry' },
+      { name: 'Watsonville Strawberry 2', address: 'Watsonville Cooler', lat: 36.92, lng: -121.77, cropId: 'strawberry' },
+      { name: 'Watsonville Raspberry',    address: 'Watsonville Cooler', lat: 36.91, lng: -121.75, cropId: 'raspberry' },
+      { name: 'Watsonville Blueberry',    address: 'Watsonville Cooler', lat: 36.92, lng: -121.75, cropId: 'blueberry' },
+      { name: 'Watsonville Blackberry',   address: 'Watsonville Cooler', lat: 36.90, lng: -121.76, cropId: 'blackberry' },
+      { name: 'Oxnard Strawberry',        address: 'Oxnard Cooler',      lat: 34.20, lng: -119.18, cropId: 'strawberry' },
+      { name: 'Oxnard Raspberry',         address: 'Oxnard Cooler',      lat: 34.21, lng: -119.19, cropId: 'raspberry' },
+      { name: 'Oxnard Blueberry',         address: 'Oxnard Cooler',      lat: 34.21, lng: -119.18, cropId: 'blueberry' }
+    ]
+  }
+];
 
-  // === RENDER DISPATCH ===
-  function render() {
-    const app = document.getElementById('app');
-    app.innerHTML = '<h1>Skeleton works — view: ' + state.view + '</h1>';
+const REGIONS = {
+  "hawke's bay":   { lat: -39.49, lng: 176.91 },
+  "ceres":         { lat: -33.37, lng: 19.31 },
+  "bowen":         { lat: -20.02, lng: 148.24 },
+  "mildura":       { lat: -34.21, lng: 142.13 },
+  "watsonville":   { lat: 36.91,  lng: -121.76 },
+  "goulburn":      { lat: -36.40, lng: 145.40 },
+  "shepparton":    { lat: -36.38, lng: 145.40 },
+  "yakima":        { lat: 46.60,  lng: -120.51 },
+  "wenatchee":     { lat: 47.42,  lng: -120.31 },
+  "default":       { lat: -37.81, lng: 144.96 }
+};
+
+function regionLatLng(addressOrCity) {
+  const lower = (addressOrCity || '').toLowerCase();
+  for (const key of Object.keys(REGIONS)) {
+    if (key !== 'default' && lower.includes(key)) return REGIONS[key];
+  }
+  return REGIONS.default;
+}
+
+function matchCompany(input) {
+  const lower = (input || '').toLowerCase().trim();
+  if (!lower) return null;
+  return COMPANIES.find(c => c.matchKeys.some(k => lower.includes(k))) || null;
+}
+
+function cropOptions(query) {
+  const q = (query || '').toLowerCase().trim();
+  const all = Object.entries(CROPS).map(([id, c]) => ({ id, displayName: c.displayName }));
+  if (!q) return all.slice(0, 8);
+  return all.filter(c => c.displayName.toLowerCase().includes(q)).slice(0, 8);
+}
+
+// === STATE ===
+const STORAGE_KEY = 'pht-mock-state-v1';
+
+const DEFAULT_STATE = {
+  view: 'splash',
+  facility: null,
+  dashboardView: 'map',
+  currentRoomId: null,
+  aiInput: '',
+  wizardDraft: { name: '', hq: '', rooms: [] }
+};
+
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore quota */ }
+}
+
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try { state = Object.assign({}, DEFAULT_STATE, JSON.parse(raw)); }
+  catch { /* corrupt — ignore */ }
+}
+
+function resetState() {
+  localStorage.removeItem(STORAGE_KEY);
+  state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  if (_leafletMap) { _leafletMap.remove(); _leafletMap = null; }
+  render();
+}
+
+function setView(view) {
+  state.view = view;
+  saveState();
+  render();
+}
+
+function makeRoomId() {
+  return 'r_' + Math.random().toString(36).slice(2, 9);
+}
+
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// === CROP MATH HELPERS ===
+function rangeMid(rangeStr) {
+  const cleaned = String(rangeStr).replace(/[^\d\.\-––]/g, '');
+  const parts = cleaned.split(/[––-]/).filter(Boolean).map(parseFloat);
+  if (parts.length === 0) return 0;
+  if (parts.length === 1) return parts[0];
+  return (parts[0] + parts[1]) / 2;
+}
+
+function ethyleneTargetNum(crop) {
+  const m = String(crop.ethyleneThreshold).match(/[0-9]*\.?[0-9]+/);
+  return m ? parseFloat(m[0]) : 0.1;
+}
+
+function jitter(base, amplitude) {
+  return base + (Math.random() * 2 - 1) * amplitude;
+}
+
+function roomEthylene(room) {
+  const crop = CROPS[room.cropId];
+  const t = ethyleneTargetNum(crop);
+  if (room.atmosOn) return Math.round(t * 0.8 * 1000) / 1000;
+  return Math.round(t * 4 * 1000) / 1000;
+}
+
+function computeBarFills(room) {
+  const crop = CROPS[room.cropId];
+  const on = room.atmosOn;
+  const greenColor = '#2e7d32';
+  const tealColor = '#4db6ac';
+  const lightTeal = '#a8d8d4';
+
+  const ethyTarget = ethyleneTargetNum(crop);
+  const ethyValue = on ? jitter(ethyTarget * 0.8, ethyTarget * 0.05) : jitter(ethyTarget * 4, ethyTarget * 0.5);
+  const ethyW = on ? Math.min(25, (ethyValue / Math.max(ethyTarget, 0.01)) * 30) : Math.min(80, (ethyValue / Math.max(ethyTarget, 0.01)) * 25);
+
+  const tempMid = rangeMid(crop.tempRange);
+  const tempVal = on ? jitter(tempMid, 0.2) : jitter(tempMid + 3, 0.5);
+
+  const humMid = rangeMid(crop.humidityRange);
+  const humVal = on ? jitter(humMid, 0.5) : jitter(humMid - 3, 1);
+
+  const presVal = jitter(1.01, on ? 0.005 : 0.02);
+
+  const o2Mid = rangeMid(crop.o2Range);
+  const o2Val = on ? jitter(o2Mid, 0.1) : jitter(20.8, 0.3);
+
+  return {
+    ethylene: { w: ethyW, color: on ? greenColor : '#c0392b', value: ethyValue.toFixed(3) },
+    temp:     { w: on ? 25 : 55, color: greenColor, value: tempVal.toFixed(1) },
+    hum:      { w: on ? 92 : 84, color: tealColor,  value: humVal.toFixed(1) },
+    pres:     { w: on ? 50 : 52, color: tealColor,  value: presVal.toFixed(2) },
+    o2:       { w: on ? 25 : 75, color: lightTeal,  value: o2Val.toFixed(2) }
+  };
+}
+
+// === RENDER DISPATCH ===
+function render() {
+  const app = document.getElementById('app');
+  const view = state.view;
+  if (view === 'splash')          return renderSplash(app);
+  if (view === 'ai-lookup')       return renderAiLookup(app);
+  if (view === 'wizard-step1')    return renderWizardStep1(app);
+  if (view === 'wizard-step2')    return renderWizardStep2(app);
+  if (view === 'fetch-animation') return renderFetchAnimation(app);
+  if (view === 'dashboard')       return renderDashboard(app);
+  if (view === 'room')            return renderRoom(app);
+  app.innerHTML = '<p>Unknown view: ' + view + '</p>';
+}
+
+// === SPLASH ===
+function renderSplash(app) {
+  app.innerHTML = `
+    <div class="splash">
+      <h1>Set up your facility</h1>
+      <p class="subtitle">Choose how you'd like to add your cool-rooms</p>
+      <div class="splash-cards">
+        <div class="splash-card" id="splash-manual">
+          <div class="icon">✍️</div>
+          <h3>Manual setup</h3>
+          <p>Enter your facility, cool-room addresses, and crops by hand. Best if you know your operation in detail.</p>
+        </div>
+        <div class="splash-card" id="splash-ai">
+          <div class="icon">🤖</div>
+          <h3>AI auto-mock</h3>
+          <p>Just type your company name. We'll search the web and pre-fill addresses, rooms, and products for you.</p>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('splash-manual').onclick = () => setView('wizard-step1');
+  document.getElementById('splash-ai').onclick = () => setView('ai-lookup');
+}
+
+// === AI LOOKUP ===
+function renderAiLookup(app) {
+  const phase = state._aiPhase || 'input';
+  const matched = state._aiMatched || null;
+
+  app.innerHTML = `
+    <div class="ai-panel">
+      <h2>AI auto-mock</h2>
+      <p class="hint">Enter your company name. We'll search the web for cool-room locations, crops stored, and facility details.</p>
+      ${phase === 'input' ? `
+        <div class="ai-input-row">
+          <input class="ai-input" id="ai-input" placeholder="e.g. Rockit Apple" value="${escHtml(state.aiInput || '')}">
+          <button class="btn btn-primary" id="ai-submit">Search</button>
+        </div>
+        <div style="margin-top: 8px; color: #888; font-size: 12px;">Try: <em>Rockit, Tru Cape, Calypso, Costa, Driscoll</em></div>
+        <button class="btn btn-link" id="ai-back" style="margin-top: 12px;">← Back</button>
+      ` : ''}
+      ${phase === 'searching' ? `
+        <div class="spinner-block">
+          <div class="spinner"></div>
+          <div class="spinner-status" id="spinner-status">Searching the web…</div>
+        </div>
+      ` : ''}
+      ${phase === 'found' && matched ? `
+        <div class="reveal-card">
+          <div class="row"><span class="label">Company</span><span class="value">${escHtml(matched.displayName)}</span></div>
+          <div class="row"><span class="label">Headquarters</span><span class="value">${escHtml(matched.hq)}</span></div>
+          <div class="row"><span class="label">Cool-rooms</span><span class="value">${matched.rooms.length}</span></div>
+          <div class="row"><span class="label">Products stored</span><span class="value">${escHtml([...new Set(matched.rooms.map(r => CROPS[r.cropId].displayName))].join(', '))}</span></div>
+        </div>
+        <div class="reveal-actions">
+          <button class="btn btn-primary" id="ai-accept">Looks good — fetch UC Davis levels</button>
+          <button class="btn btn-secondary" id="ai-edit">Edit first</button>
+          <button class="btn btn-link" id="ai-cancel">Cancel</button>
+        </div>
+      ` : ''}
+      ${phase === 'notfound' ? `
+        <div class="not-found">
+          <p><strong>We couldn't find this company in our database.</strong></p>
+          <p style="margin-top: 8px; font-size: 13px;">Try one of: Rockit, Tru Cape, Calypso, Costa, Driscoll — or enter manually.</p>
+        </div>
+        <div class="reveal-actions">
+          <button class="btn btn-primary" id="ai-manual">Enter manually</button>
+          <button class="btn btn-secondary" id="ai-retry">Try again</button>
+          <button class="btn btn-link" id="ai-cancel-nf">Cancel</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  if (phase === 'input') {
+    const input = document.getElementById('ai-input');
+    input.focus();
+    input.oninput = (e) => { state.aiInput = e.target.value; saveState(); };
+    input.onkeydown = (e) => { if (e.key === 'Enter') document.getElementById('ai-submit').click(); };
+    document.getElementById('ai-submit').onclick = startAiSearch;
+    document.getElementById('ai-back').onclick = () => { state.aiInput = ''; setView('splash'); };
   }
 
+  if (phase === 'found') {
+    document.getElementById('ai-accept').onclick = () => acceptAiMatch(matched);
+    document.getElementById('ai-edit').onclick = () => loadMatchIntoWizard(matched);
+    document.getElementById('ai-cancel').onclick = () => clearAiAndBack();
+  }
+
+  if (phase === 'notfound') {
+    document.getElementById('ai-manual').onclick = () => clearAiAndGoTo('wizard-step1');
+    document.getElementById('ai-retry').onclick = () => { state._aiPhase = 'input'; render(); };
+    document.getElementById('ai-cancel-nf').onclick = () => clearAiAndBack();
+  }
+}
+
+function startAiSearch() {
+  state._aiPhase = 'searching';
   render();
+  const statuses = ['Searching the web…', 'Finding cool-room locations…', 'Identifying products stored…'];
+  let i = 0;
+  const interval = setInterval(() => {
+    i = (i + 1) % statuses.length;
+    const el = document.getElementById('spinner-status');
+    if (el) el.textContent = statuses[i];
+  }, 1000);
+
+  setTimeout(() => {
+    clearInterval(interval);
+    const matched = matchCompany(state.aiInput);
+    if (matched) {
+      state._aiMatched = matched;
+      state._aiPhase = 'found';
+    } else {
+      state._aiPhase = 'notfound';
+    }
+    render();
+  }, 3000);
+}
+
+function acceptAiMatch(matched) {
+  state.facility = {
+    name: matched.displayName,
+    hq: matched.hq,
+    lat: matched.lat,
+    lng: matched.lng,
+    rooms: matched.rooms.map(r => ({
+      id: makeRoomId(),
+      name: r.name,
+      address: r.address,
+      lat: r.lat,
+      lng: r.lng,
+      cropId: r.cropId,
+      atmosOn: false
+    }))
+  };
+  state._aiPhase = null;
+  state._aiMatched = null;
+  state.aiInput = '';
+  setView('fetch-animation');
+}
+
+function loadMatchIntoWizard(matched) {
+  state.wizardDraft = {
+    name: matched.displayName,
+    hq: matched.hq,
+    rooms: matched.rooms.map(r => ({ ...r, id: makeRoomId() }))
+  };
+  state._aiPhase = null;
+  state._aiMatched = null;
+  setView('wizard-step2');
+}
+
+function clearAiAndBack() {
+  state._aiPhase = null;
+  state._aiMatched = null;
+  state.aiInput = '';
+  setView('splash');
+}
+
+function clearAiAndGoTo(view) {
+  state._aiPhase = null;
+  state._aiMatched = null;
+  setView(view);
+}
+
+// === WIZARD STEP 1 ===
+function renderWizardStep1(app) {
+  const draft = state.wizardDraft;
+  app.innerHTML = `
+    <div class="ai-panel">
+      <h2>Step 1 of 2 — Your facility</h2>
+      <p class="hint">Tell us where your operation is based.</p>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <label style="display:block;font-size:11px;color:#888;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.8px;">Facility name</label>
+          <input class="ai-input" id="w1-name" placeholder="e.g. Acme Cold Storage Co." value="${escHtml(draft.name || '')}">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:#888;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.8px;">Headquarters</label>
+          <input class="ai-input" id="w1-hq" placeholder="City, Region/Country" value="${escHtml(draft.hq || '')}">
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button class="btn btn-link" id="w1-back">← Back</button>
+        <div style="flex: 1;"></div>
+        <button class="btn btn-primary" id="w1-next">Next →</button>
+      </div>
+    </div>
+  `;
+  const nameInput = document.getElementById('w1-name');
+  const hqInput = document.getElementById('w1-hq');
+  const nextBtn = document.getElementById('w1-next');
+  function refreshNext() {
+    const ok = nameInput.value.trim() && hqInput.value.trim();
+    nextBtn.disabled = !ok;
+    nextBtn.style.opacity = ok ? '1' : '0.5';
+    nextBtn.style.cursor = ok ? 'pointer' : 'not-allowed';
+  }
+  refreshNext();
+  nameInput.oninput = (e) => { state.wizardDraft.name = e.target.value; saveState(); refreshNext(); };
+  hqInput.oninput = (e) => { state.wizardDraft.hq = e.target.value; saveState(); refreshNext(); };
+  nameInput.focus();
+  document.getElementById('w1-back').onclick = () => setView('splash');
+  nextBtn.onclick = () => { if (!nextBtn.disabled) setView('wizard-step2'); };
+}
+
+// === WIZARD STEP 2 ===
+function renderWizardStep2(app) {
+  const draft = state.wizardDraft;
+  const cropQuery = state._cropQuery || '';
+  const cropOpen = state._cropOpen || false;
+  const newRoom = state._newRoom || { name: '', address: '', cropId: null, cropDisplay: '' };
+
+  app.innerHTML = `
+    <div class="ai-panel" style="max-width: 720px;">
+      <h2>Step 2 of 2 — Add cool-rooms</h2>
+      <p class="hint">Add each cool-room with its address and the crop it stores.</p>
+
+      <div class="rooms-list" id="rooms-list">
+        ${draft.rooms.length === 0 ? '<p style="color:#888;font-size:13px;font-style:italic;">No rooms yet — add one below.</p>' : ''}
+        ${draft.rooms.map((r, idx) => `
+          <div class="room-row">
+            <div class="info">
+              <b>${escHtml(r.name)}</b> · ${escHtml(CROPS[r.cropId] ? CROPS[r.cropId].displayName : '(unknown crop)')}
+              <small>${escHtml(r.address)}</small>
+            </div>
+            <button class="remove" data-idx="${idx}">Remove</button>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="add-room-form">
+        <div class="row3">
+          <input class="ai-input" id="nr-name" placeholder="Room name" value="${escHtml(newRoom.name || '')}">
+          <input class="ai-input" id="nr-addr" placeholder="Address / location" value="${escHtml(newRoom.address || '')}">
+          <div class="crop-autocomplete">
+            <input class="ai-input" id="nr-crop" placeholder="Crop (type to search)" value="${escHtml(newRoom.cropDisplay || cropQuery || '')}" autocomplete="off">
+            ${cropOpen ? `
+              <div class="crop-suggestions">
+                ${cropOptions(cropQuery).map(o => `<div class="item" data-id="${escHtml(o.id)}" data-display="${escHtml(o.displayName)}">${escHtml(o.displayName)}</div>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+        <button class="btn btn-secondary" id="add-room-btn">+ Add room to list</button>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 20px;">
+        <button class="btn btn-link" id="w2-back">← Back</button>
+        <div style="flex: 1;"></div>
+        <button class="btn btn-primary" id="w2-done">Done — fetch optimal levels →</button>
+      </div>
+    </div>
+  `;
+
+  const cropInput = document.getElementById('nr-crop');
+  cropInput.oninput = (e) => {
+    state._cropQuery = e.target.value;
+    state._cropOpen = true;
+    state._newRoom = { ...(state._newRoom || {}), cropId: null, cropDisplay: e.target.value };
+    saveState();
+    render();
+    const f = document.getElementById('nr-crop'); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+  };
+  cropInput.onfocus = () => { if (!state._cropOpen) { state._cropOpen = true; render(); const f = document.getElementById('nr-crop'); if (f) f.focus(); } };
+  document.querySelectorAll('.crop-suggestions .item').forEach(el => {
+    el.onclick = () => {
+      state._newRoom = { ...(state._newRoom || {}), cropId: el.dataset.id, cropDisplay: el.dataset.display };
+      state._cropQuery = el.dataset.display;
+      state._cropOpen = false;
+      saveState();
+      render();
+    };
+  });
+
+  document.getElementById('nr-name').oninput = (e) => { state._newRoom = { ...(state._newRoom || {}), name: e.target.value }; saveState(); };
+  document.getElementById('nr-addr').oninput = (e) => { state._newRoom = { ...(state._newRoom || {}), address: e.target.value }; saveState(); };
+
+  document.getElementById('add-room-btn').onclick = () => {
+    const nr = state._newRoom || {};
+    if (!nr.name || !nr.address || !nr.cropId) {
+      alert('Please fill in room name, address, and pick a crop from the dropdown.');
+      return;
+    }
+    const ll = regionLatLng(nr.address);
+    state.wizardDraft.rooms.push({
+      id: makeRoomId(),
+      name: nr.name,
+      address: nr.address,
+      lat: ll.lat,
+      lng: ll.lng,
+      cropId: nr.cropId
+    });
+    state._newRoom = { name: '', address: '', cropId: null, cropDisplay: '' };
+    state._cropQuery = '';
+    state._cropOpen = false;
+    saveState();
+    render();
+  };
+
+  document.querySelectorAll('.room-row .remove').forEach(btn => {
+    btn.onclick = () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      state.wizardDraft.rooms.splice(idx, 1);
+      saveState();
+      render();
+    };
+  });
+
+  document.getElementById('w2-back').onclick = () => setView('wizard-step1');
+  const doneBtn = document.getElementById('w2-done');
+  doneBtn.disabled = draft.rooms.length === 0;
+  doneBtn.style.opacity = doneBtn.disabled ? '0.5' : '1';
+  doneBtn.style.cursor = doneBtn.disabled ? 'not-allowed' : 'pointer';
+  doneBtn.onclick = () => {
+    if (doneBtn.disabled) return;
+    const hqLL = regionLatLng(state.wizardDraft.hq);
+    state.facility = {
+      name: state.wizardDraft.name,
+      hq: state.wizardDraft.hq,
+      lat: hqLL.lat,
+      lng: hqLL.lng,
+      rooms: state.wizardDraft.rooms.map(r => ({ ...r, atmosOn: r.atmosOn || false }))
+    };
+    state.wizardDraft = { name: '', hq: '', rooms: [] };
+    state._newRoom = { name: '', address: '', cropId: null, cropDisplay: '' };
+    state._cropQuery = '';
+    state._cropOpen = false;
+    setView('fetch-animation');
+  };
+}
+
+// === FETCH ANIMATION ===
+function renderFetchAnimation(app) {
+  const facility = state.facility;
+  if (!facility) { setView('splash'); return; }
+  app.innerHTML = `
+    <div class="fetch-screen">
+      <div class="uc-davis">UC Davis Postharvest Technology Center</div>
+      <h2>Fetching optimal storage levels…</h2>
+      <div class="spinner"></div>
+      <div class="room-tally" id="tally">Configuring ${facility.rooms.length} cool-rooms</div>
+    </div>
+  `;
+  const messages = [
+    'Configuring ' + facility.rooms.length + ' cool-rooms',
+    'Loading ethylene thresholds',
+    'Setting temperature & humidity targets',
+    'Calibrating O₂ / CO₂ ranges'
+  ];
+  let i = 0;
+  const interval = setInterval(() => {
+    i = (i + 1) % messages.length;
+    const el = document.getElementById('tally');
+    if (el) el.textContent = messages[i];
+  }, 500);
+  setTimeout(() => {
+    clearInterval(interval);
+    setView('dashboard');
+  }, 2000);
+}
+
+// === DASHBOARD ===
+let _leafletMap = null;
+
+function renderDashboard(app) {
+  const facility = state.facility;
+  if (!facility) { setView('splash'); return; }
+
+  app.innerHTML = `
+    <div class="frame">
+      <div class="dash">
+        <div class="dash-nav">
+          <div class="logo">🌱 PostHarvest</div>
+          <div class="crumbs">
+            <span>LOCATIONS</span><span class="crumb-dot done">✓</span>
+            <span class="crumb-line"></span>
+            <span>FACILITY</span><span class="crumb-dot active">●</span>
+            <span class="crumb-line"></span>
+            <span>ROOM</span><span class="crumb-dot todo">○</span>
+          </div>
+          <div class="user">
+            <button class="reset" id="reset-btn">Reset Demo</button>
+            <span>${escHtml((facility.name || 'demo').slice(0, 20))}</span>
+            <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;">👤</div>
+          </div>
+        </div>
+
+        <div class="fac-header">
+          <div class="title">
+            <h2>${escHtml(facility.name)}</h2>
+            <div class="hq">${escHtml(facility.hq)} · ${facility.rooms.length} cool-rooms</div>
+          </div>
+          <div class="actions">
+            <div class="toggle">
+              <button id="t-map" class="${state.dashboardView === 'map' ? 'active' : ''}">Map</button>
+              <button id="t-grid" class="${state.dashboardView === 'grid' ? 'active' : ''}">Grid</button>
+            </div>
+            <button class="add-room-btn" id="add-room">+ Add Room</button>
+          </div>
+        </div>
+
+        <div class="fac-body">
+          ${state.dashboardView === 'grid' ? `
+            <div class="grid-tiles">
+              ${facility.rooms.map(r => {
+                const crop = CROPS[r.cropId] || { displayName: '(unknown)' };
+                const ethy = roomEthylene(r);
+                const status = r.atmosOn ? 'ok' : 'warn';
+                return `
+                  <div class="tile" data-id="${escHtml(r.id)}">
+                    <h4>${escHtml(r.name)}</h4>
+                    <div class="crop">${escHtml(crop.displayName)}</div>
+                    <div class="ethy">${ethy.toFixed(3)} <small>ppm</small></div>
+                    <span class="badge ${status}">${r.atmosOn ? 'At optimal' : 'Operational'}</span>
+                    <span class="atmos-pill ${r.atmosOn ? 'on' : ''}">Atmos ${r.atmosOn ? 'ON' : 'OFF'}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : `
+            <div id="map-container"></div>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('reset-btn').onclick = () => { if (confirm('Reset demo to splash?')) resetState(); };
+  document.getElementById('t-map').onclick = () => { state.dashboardView = 'map'; saveState(); render(); };
+  document.getElementById('t-grid').onclick = () => { state.dashboardView = 'grid'; saveState(); render(); };
+  document.getElementById('add-room').onclick = () => {
+    state.wizardDraft = { name: facility.name, hq: facility.hq, rooms: facility.rooms.map(r => ({ ...r })) };
+    setView('wizard-step2');
+  };
+
+  if (state.dashboardView === 'grid') {
+    document.querySelectorAll('.tile').forEach(el => {
+      el.onclick = () => {
+        state.currentRoomId = el.dataset.id;
+        setView('room');
+      };
+    });
+  }
+
+  if (state.dashboardView === 'map') {
+    setTimeout(() => initFacilityMap(facility), 0);
+  }
+}
+
+function initFacilityMap(facility) {
+  const el = document.getElementById('map-container');
+  if (!el) return;
+  if (_leafletMap) { _leafletMap.remove(); _leafletMap = null; }
+  _leafletMap = L.map(el);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '© OpenStreetMap'
+  }).addTo(_leafletMap);
+
+  facility.rooms.forEach(room => {
+    const crop = CROPS[room.cropId] || { displayName: '(unknown)' };
+    const ethy = roomEthylene(room);
+    const color = room.atmosOn ? '#2e7d32' : '#ff9800';
+    const marker = L.circleMarker([room.lat, room.lng], {
+      radius: 10,
+      fillColor: color,
+      color: '#fff',
+      weight: 2,
+      fillOpacity: 0.9
+    }).addTo(_leafletMap);
+    marker.bindPopup(`
+      <div style="font-family:'Segoe UI',sans-serif;font-size:13px;min-width:180px;">
+        <strong>${escHtml(room.name)}</strong><br>
+        ${escHtml(crop.displayName)}<br>
+        <span style="color:#888;">Ethylene: ${ethy.toFixed(3)} ppm</span><br>
+        <a href="#" data-open-room="${escHtml(room.id)}">Open room →</a>
+      </div>
+    `);
+    marker.on('popupopen', () => {
+      const link = document.querySelector('[data-open-room="' + room.id + '"]');
+      if (link) link.onclick = (e) => { e.preventDefault(); state.currentRoomId = room.id; setView('room'); };
+    });
+  });
+
+  if (facility.rooms.length > 1) {
+    const bounds = L.latLngBounds(facility.rooms.map(r => [r.lat, r.lng]));
+    _leafletMap.fitBounds(bounds, { padding: [40, 40] });
+  } else if (facility.rooms.length === 1) {
+    _leafletMap.setView([facility.rooms[0].lat, facility.rooms[0].lng], 9);
+  } else {
+    _leafletMap.setView([facility.lat, facility.lng], 6);
+  }
+}
+
+// === ROOM ===
+function renderRoom(app) {
+  const facility = state.facility;
+  if (!facility) { setView('splash'); return; }
+  const room = facility.rooms.find(r => r.id === state.currentRoomId);
+  if (!room) { setView('dashboard'); return; }
+  const crop = CROPS[room.cropId];
+  const ethy = roomEthylene(room);
+  const atmosOn = room.atmosOn;
+  const fills = computeBarFills(room);
+  const cropTitle = crop.displayName.split(' — ')[0];
+  const cropSub = crop.displayName.includes(' — ') ? crop.displayName.split(' — ')[1] : '';
+
+  app.innerHTML = `
+    <div class="frame">
+      <div class="dash">
+        <div class="dash-nav">
+          <div class="logo">🌱 PostHarvest</div>
+          <div class="crumbs">
+            <span>LOCATIONS</span><span class="crumb-dot done">✓</span>
+            <span class="crumb-line"></span>
+            <span>FACILITY</span><span class="crumb-dot done">✓</span>
+            <span class="crumb-line"></span>
+            <span>ROOM</span><span class="crumb-dot active">●</span>
+          </div>
+          <div class="user">
+            <button class="reset" id="reset-btn">Reset Demo</button>
+            <span>${escHtml((facility.name || 'demo').slice(0, 20))}</span>
+            <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;">👤</div>
+          </div>
+        </div>
+
+        <div class="tabs-row">
+          <div class="room-name">${escHtml(room.name)}</div>
+          <div class="tab active">Overview</div>
+          <div class="tab" data-stub>Config</div>
+          <div class="tab" data-stub>Reports</div>
+          <div class="tab" data-stub>Readings</div>
+          <div class="tab" data-stub>Pair</div>
+          <div class="back" id="back-to-fac">← Back to facility</div>
+        </div>
+
+        <div class="crop-strip">
+          <div class="col"><span class="val">${escHtml(cropTitle)}</span>${cropSub ? `<span class="lbl">— ${escHtml(cropSub)}</span>` : ''}</div>
+          <div class="ca-pill">CA/DCA</div>
+          <div class="col"><span class="lbl">Temp</span><span class="val">${escHtml(crop.tempRange)}</span></div>
+          <div class="col"><span class="lbl">Humidity</span><span class="val">${escHtml(crop.humidityRange)}</span></div>
+          <div class="col"><span class="lbl">Ethylene</span><span class="val alert">${escHtml(crop.ethyleneThreshold)}</span></div>
+          <div class="col"><span class="lbl">O₂</span><span class="val">${escHtml(crop.o2Range)}</span></div>
+          <div class="col"><span class="lbl">CO₂</span><span class="val">${escHtml(crop.co2Range)}</span></div>
+          <div class="note">${escHtml(crop.sensitivity)}</div>
+        </div>
+
+        <div class="atmos-bar">
+          <span class="demo-pill">DEMO</span>
+          <button class="atmos-toggle ${atmosOn ? 'on' : ''}" id="atmos-toggle">⏻ ATMOS ${atmosOn ? 'ON' : 'OFF'}</button>
+          <span class="atmos-status ${atmosOn ? '' : 'warn'}">${atmosOn ? '✓ All 5 factors at ' + (cropSub || cropTitle) + ' optimal — Atmos is working' : 'Press to see Atmos bring all factors to ' + cropTitle.toLowerCase() + ' optimal levels'}</span>
+        </div>
+
+        <div class="room-body">
+          <div class="bars-card">
+            <div class="bar-row"><span class="lbl">Ethylene</span><div class="bar-track"><div class="bar-fill" style="width:${fills.ethylene.w}%;background:${fills.ethylene.color}"></div></div><span class="target">→ ${escHtml(crop.ethyleneThreshold)}</span></div>
+            <div class="bar-row"><span class="lbl">Temperature</span><div class="bar-track"><div class="bar-fill" style="width:${fills.temp.w}%;background:${fills.temp.color}"></div></div><span class="target">→ ${escHtml(crop.tempRange)}</span></div>
+            <div class="bar-row"><span class="lbl">Humidity</span><div class="bar-track"><div class="bar-fill" style="width:${fills.hum.w}%;background:${fills.hum.color}"></div></div><span class="target">→ ${escHtml(crop.humidityRange)}</span></div>
+            <div class="bar-row"><span class="lbl">Pressure</span><div class="bar-track"><div class="bar-fill" style="width:${fills.pres.w}%;background:${fills.pres.color}"></div></div><span class="target">→ ${escHtml(crop.pressure)}</span></div>
+            <div class="bar-row"><span class="lbl">Oxygen</span><div class="bar-track"><div class="bar-fill" style="width:${fills.o2.w}%;background:${fills.o2.color}"></div></div><span class="target">→ ${escHtml(crop.o2Range)}</span></div>
+          </div>
+          <div>
+            <div class="stat-card">
+              <div class="label-row">ETHYLENE READING</div>
+              <div class="ethy-big">${fills.ethylene.value}</div>
+              <div class="target-line">Target: ${escHtml(crop.ethyleneThreshold)}</div>
+              <div class="mini-grid">
+                <div class="mini"><div class="v">${fills.hum.value}%</div><div class="l">HUMIDITY</div><div class="t">→ ${escHtml(crop.humidityRange)}</div></div>
+                <div class="mini"><div class="v">${fills.temp.value}°C</div><div class="l">TEMPERATURE</div><div class="t">→ ${escHtml(crop.tempRange)}</div></div>
+                <div class="mini"><div class="v">${fills.pres.value} atm</div><div class="l">PRESSURE</div><div class="t">→ ${escHtml(crop.pressure)}</div></div>
+                <div class="mini"><div class="v">${fills.o2.value}%</div><div class="l">OXYGEN</div><div class="t">→ ${escHtml(crop.o2Range)}</div></div>
+              </div>
+            </div>
+            <div class="system-status-card">
+              <div class="lbl">SYSTEM STATUS</div>
+              <span class="pill ${atmosOn ? '' : 'warn'}">${atmosOn ? '✓ at optimal' : '⚠ operational'}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div style="font-size:11px;color:#888;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">24-hour history</div>
+          <div id="chart-mount">${chartSvg(room)}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('reset-btn').onclick = () => { if (confirm('Reset demo to splash?')) resetState(); };
+  document.getElementById('back-to-fac').onclick = () => { state.currentRoomId = null; setView('dashboard'); };
+  document.querySelectorAll('[data-stub]').forEach(el => el.onclick = () => alert('"' + el.textContent + '" tab — coming soon'));
+  document.getElementById('atmos-toggle').onclick = () => {
+    room.atmosOn = !room.atmosOn;
+    saveState();
+    render();
+  };
+}
+
+// === CHART ===
+function chartSvg(room) {
+  const crop = CROPS[room.cropId];
+  const W = 980, H = 220, padL = 40, padR = 100, padT = 20, padB = 30;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const N = 48;
+  const activatedAt = N * 0.7;
+  const on = room.atmosOn;
+
+  function pathFor(beforeBase, afterBase, beforeAmp, afterAmp, scaleMin, scaleMax, color) {
+    const points = [];
+    for (let i = 0; i < N; i++) {
+      const isBefore = i < activatedAt;
+      let v;
+      if (on) {
+        v = isBefore ? beforeBase + (Math.random() - 0.5) * beforeAmp : afterBase + (Math.random() - 0.5) * afterAmp;
+      } else {
+        v = beforeBase + (Math.random() - 0.5) * beforeAmp;
+      }
+      const x = padL + (i / (N - 1)) * innerW;
+      const denom = (scaleMax - scaleMin) || 1;
+      const y = padT + innerH - ((v - scaleMin) / denom) * innerH;
+      points.push([x, Math.max(padT, Math.min(padT + innerH, y))]);
+    }
+    const d = points.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    return `<path d="${d}" stroke="${color}" stroke-width="1.6" fill="none"/>`;
+  }
+
+  const ethyTarget = ethyleneTargetNum(crop);
+  const tempMid = rangeMid(crop.tempRange);
+  const humMid = rangeMid(crop.humidityRange);
+  const o2Mid = rangeMid(crop.o2Range);
+
+  const lines = [
+    pathFor(ethyTarget * 4, ethyTarget * 0.8, ethyTarget * 1.5, ethyTarget * 0.05, 0, ethyTarget * 6, '#1a6b1a'),
+    pathFor(tempMid + 3, tempMid, 0.6, 0.2, tempMid - 5, tempMid + 8, '#4caf50'),
+    pathFor(humMid - 2, humMid, 1.5, 0.4, humMid - 12, humMid + 4, '#7fc4be'),
+    pathFor(1.01, 1.01, 0.04, 0.005, 0.95, 1.10, '#4db6ac'),
+    pathFor(o2Mid * 6, o2Mid, 0.8, 0.1, 0, Math.max(o2Mid * 8, 25), '#a8d8d4')
+  ];
+
+  const activatedX = padL + (activatedAt / (N - 1)) * innerW;
+  const activatedLine = on ? `
+    <line x1="${activatedX}" y1="${padT}" x2="${activatedX}" y2="${H - padB}" stroke="#1a6b1a" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <rect x="${activatedX - 60}" y="${padT - 14}" width="120" height="20" fill="#1a6b1a" rx="3"/>
+    <text x="${activatedX}" y="${padT}" fill="white" font-size="10" font-weight="700" text-anchor="middle">ATMOS ACTIVATED</text>
+  ` : '';
+
+  const xLabels = ['11:00','12:10','13:20','14:30','15:40','16:50','18:00','19:10','20:20','21:30','22:50']
+    .map((t, i) => {
+      const x = padL + (i / 10) * innerW;
+      return `<text x="${x}" y="${H - 6}" font-size="9" fill="#888" text-anchor="middle">${t}</text>`;
+    }).join('');
+
+  const legendItems = [
+    { c: '#1a6b1a', label: 'Ethylene' },
+    { c: '#4caf50', label: 'Temperature' },
+    { c: '#7fc4be', label: 'Humidity' },
+    { c: '#4db6ac', label: 'Pressure' },
+    { c: '#a8d8d4', label: 'Oxygen' }
+  ];
+  const legend = legendItems
+    .map((it, i) => `<g><circle cx="${padL + i * 110 + 4}" cy="${H + 8}" r="4" fill="${it.c}"/><text x="${padL + i * 110 + 14}" y="${H + 12}" font-size="10" fill="#888">${it.label}</text></g>`)
+    .join('');
+
+  return `<svg viewBox="0 0 ${W} ${H + 24}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block;">
+    ${lines.join('')}
+    ${activatedLine}
+    ${xLabels}
+    ${legend}
+  </svg>`;
+}
+
+// === LIVE TICK ===
+let _liveTickInterval = null;
+
+function startLiveTick() {
+  if (_liveTickInterval) clearInterval(_liveTickInterval);
+  _liveTickInterval = setInterval(() => {
+    if (state.view !== 'room') return;
+    const facility = state.facility;
+    if (!facility) return;
+    const room = facility.rooms.find(r => r.id === state.currentRoomId);
+    if (!room) return;
+    const fills = computeBarFills(room);
+    const ethyEl = document.querySelector('.ethy-big');
+    if (ethyEl) ethyEl.textContent = fills.ethylene.value;
+    const barRows = document.querySelectorAll('.bars-card .bar-row');
+    const keys = ['ethylene', 'temp', 'hum', 'pres', 'o2'];
+    barRows.forEach((row, i) => {
+      const k = keys[i];
+      if (!fills[k]) return;
+      const fill = row.querySelector('.bar-fill');
+      if (fill) {
+        fill.style.width = fills[k].w + '%';
+        fill.style.background = fills[k].color;
+      }
+    });
+    const minis = document.querySelectorAll('.stat-card .mini .v');
+    if (minis.length === 4) {
+      minis[0].textContent = fills.hum.value + '%';
+      minis[1].textContent = fills.temp.value + '°C';
+      minis[2].textContent = fills.pres.value + ' atm';
+      minis[3].textContent = fills.o2.value + '%';
+    }
+  }, 2000);
+}
+
+// === BOOT ===
+loadState();
+render();
+startLiveTick();
 </script>
 </body>
 </html>
