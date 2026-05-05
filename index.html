@@ -175,6 +175,24 @@
   .crop-strip .ca-pill { background: #2e7d32; color: white; padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
   .crop-strip .note { color: #888; font-style: italic; font-size: 11px; margin-left: auto; max-width: 240px; }
   .atmos-bar { background: #e8f5e9; padding: 12px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .atmos-bar.crit { background: #fff5f4; }
+  .atmos-status.crit { color: #c0392b; font-weight: 700; }
+  .atmos-toggle.crit { border-color: #c0392b; color: #c0392b; }
+  .system-status-card .pill.crit { background: #c0392b; }
+
+  /* === ATTENTION BANNER (room view) === */
+  .attention-banner { background: #fff5f4; border-left: 4px solid #c0392b; padding: 18px 24px 16px; }
+  .attention-banner .ab-head { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; margin-bottom: 14px; }
+  .attention-banner .ab-icon { font-size: 22px; color: #c0392b; }
+  .attention-banner .ab-title { font-size: 15px; font-weight: 700; color: #c0392b; letter-spacing: -0.2px; }
+  .attention-banner .ab-sub { font-size: 13px; color: #1a1a1a; margin-top: 3px; line-height: 1.4; }
+  .attention-banner .ab-causes-title { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: #888; font-weight: 700; margin-bottom: 10px; }
+  .attention-banner .ab-causes { display: flex; flex-direction: column; gap: 8px; }
+  .attention-banner .ab-cause { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; padding: 10px 14px; background: white; border-radius: 8px; border: 1px solid #f5cccc; }
+  .attention-banner .ab-cause-icon { font-size: 18px; line-height: 1.2; }
+  .attention-banner .ab-cause-name { font-size: 13px; font-weight: 700; color: #1a1a1a; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .attention-banner .ab-conf { font-size: 9px; background: #c0392b; color: white; padding: 2px 7px; border-radius: 6px; letter-spacing: 0.5px; font-weight: 700; }
+  .attention-banner .ab-cause-desc { font-size: 12px; color: #555; line-height: 1.45; margin-top: 4px; }
   .atmos-bar .demo-pill { background: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; color: #888; letter-spacing: 1px; }
   .atmos-toggle { background: white; padding: 8px 18px; border-radius: 22px; border: 2px solid #2e7d32; cursor: pointer; font-weight: 700; font-size: 13px; color: #2e7d32; display: inline-flex; align-items: center; gap: 8px; transition: background 0.3s, color 0.3s; }
   .atmos-toggle.on { background: #2e7d32; color: white; }
@@ -800,6 +818,28 @@ function roomNaturalEthylene(room) {
   // Range: 2× to 6× the at-optimal target — wide spread, deterministic per room
   return Math.round((t * (2 + seed * 4)) * 1000) / 1000;
 }
+
+// Top 3 likely causes when a room is out of alignment
+const TOP_3_ATTENTION_CAUSES = [
+  {
+    icon: '🚪',
+    title: 'Door cycle anomaly',
+    desc: 'Door open events 2.4× baseline in last 12h. Likely seal degradation or staff training gap. Inspect gasket + review cycle log.',
+    confidence: 78
+  },
+  {
+    icon: '🌡️',
+    title: 'Refrigeration / compressor lag',
+    desc: 'AC duty cycle running 38% above baseline. Refrigerant low or preventive maintenance overdue. Schedule technician within 48h.',
+    confidence: 64
+  },
+  {
+    icon: '📊',
+    title: 'Sensor calibration drift',
+    desc: 'IMCP cross-check vs lab-validated baseline shows 4.2% offset. Cross-check with portable gas chromatograph and re-zero sensor.',
+    confidence: 52
+  }
+];
 
 function shipSuggestion(rank, total) {
   const pos = rank / Math.max(1, total - 1); // 0..1
@@ -2111,10 +2151,38 @@ function renderRoom(app) {
           <div class="note">${escHtml(crop.sensitivity)}</div>
         </div>
 
-        <div class="atmos-bar">
+        ${room.attentionReason ? `
+          <div class="attention-banner">
+            <div class="ab-head">
+              <span class="ab-icon">⚠</span>
+              <div>
+                <div class="ab-title">Out of optimal range — needs attention</div>
+                <div class="ab-sub">${escHtml(room.attentionReason)}</div>
+              </div>
+            </div>
+            <div class="ab-causes-title">Top 3 likely causes</div>
+            <div class="ab-causes">
+              ${TOP_3_ATTENTION_CAUSES.map((c, i) => `
+                <div class="ab-cause">
+                  <span class="ab-cause-icon">${c.icon}</span>
+                  <div>
+                    <div class="ab-cause-name">${i + 1}. ${escHtml(c.title)} <span class="ab-conf">${c.confidence}% likely</span></div>
+                    <div class="ab-cause-desc">${escHtml(c.desc)}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="atmos-bar ${room.attentionReason ? 'crit' : ''}">
           <span class="demo-pill">DEMO</span>
-          <button class="atmos-toggle ${atmosOn ? 'on' : ''}" id="atmos-toggle">⏻ ATMOS ${atmosOn ? 'ON' : 'OFF'}</button>
-          <span class="atmos-status ${atmosOn ? '' : 'warn'}">${atmosOn ? '✓ All 5 factors at ' + (cropSub || cropTitle) + ' optimal — Atmos is working' : 'Press to see Atmos bring all factors to ' + cropTitle.toLowerCase() + ' optimal levels'}</span>
+          <button class="atmos-toggle ${atmosOn ? 'on' : ''} ${room.attentionReason ? 'crit' : ''}" id="atmos-toggle">⏻ ATMOS ${atmosOn ? 'ON' : 'OFF'}</button>
+          <span class="atmos-status ${room.attentionReason ? 'crit' : (atmosOn ? '' : 'warn')}">${
+            room.attentionReason
+              ? '⚠ Atmos cannot fully compensate — investigate causes above'
+              : (atmosOn ? '✓ All 5 factors at ' + (cropSub || cropTitle) + ' optimal — Atmos is working' : 'Press to see Atmos bring all factors to ' + cropTitle.toLowerCase() + ' optimal levels')
+          }</span>
         </div>
 
         <div class="room-body">
@@ -2139,7 +2207,7 @@ function renderRoom(app) {
             </div>
             <div class="system-status-card">
               <div class="lbl">SYSTEM STATUS</div>
-              <span class="pill ${atmosOn ? '' : 'warn'}">${atmosOn ? '✓ at optimal' : '⚠ operational'}</span>
+              <span class="pill ${room.attentionReason ? 'crit' : (atmosOn ? '' : 'warn')}">${room.attentionReason ? '⚠ needs attention' : (atmosOn ? '✓ at optimal' : '⚠ operational')}</span>
             </div>
           </div>
         </div>
