@@ -858,16 +858,15 @@ function facilitySeed(name) {
 
 function facilityKpis(facility) {
   const seed = facilitySeed(facility.name);
-  const onCount = facility.rooms.filter(r => r.atmosOn && !r.attentionReason).length;
   const totalRooms = facility.rooms.length || 1;
+  const onCount = facility.rooms.filter(r => r.atmosOn && !r.attentionReason).length;
   const efficiency = onCount / totalRooms; // 0..1
-  // Per-room baseline: $1,200/mo savings at full Atmos efficiency, ±15% per facility
-  const perRoom = 1100 + Math.round(seed * 250);
-  const savings = Math.round(perRoom * onCount);
+  // Premium-grade %: rooms at-optimal qualify for premium pricing
+  const qualityGrade = Math.round(efficiency * 100);
   const tons = Math.round((onCount * 0.18 + seed * 0.4) * 10) / 10;
   // Energy delta: -12% to -22%, scaled by efficiency
   const energy = -Math.round(12 + efficiency * 10 + seed * 2);
-  return { savings, tons, energy };
+  return { qualityGrade, tons, energy };
 }
 
 const AI_SUGGESTIONS = [
@@ -1531,9 +1530,9 @@ function renderDashboard(app) {
 
         <div class="kpi-strip">
           <div class="kpi-card">
-            <div class="lbl">Saved this month</div>
-            <div class="val" data-key="savings" data-target="${kpis.savings}" data-format="money">$0</div>
-            <div class="delta">↑ vs Atmos OFF baseline</div>
+            <div class="lbl">Premium-grade rooms</div>
+            <div class="val" data-key="quality" data-target="${kpis.qualityGrade}" data-format="pct">0%</div>
+            <div class="delta">at peak quality · ship-ready</div>
           </div>
           <div class="kpi-card">
             <div class="lbl">Spoilage avoided</div>
