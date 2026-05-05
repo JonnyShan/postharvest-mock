@@ -242,7 +242,14 @@
   .system-status-card .lbl { font-size: 10px; color: #888; letter-spacing: 1px; text-transform: uppercase; }
   .system-status-card .pill { background: #2e7d32; color: white; padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 700; margin-top: 6px; display: inline-block; }
   .system-status-card .pill.warn { background: #b87800; }
-  .chart-card { background: white; border-radius: 10px; padding: 16px; margin: 16px 24px 24px; }
+  .chart-card { background: white; border-radius: 10px; padding: 16px; margin: 16px 24px 24px; position: relative; }
+  .chart-event { cursor: pointer; }
+  .chart-event circle { transition: r 0.15s; }
+  .chart-event:hover > circle:first-of-type { r: 8; }
+  .chart-tooltip { position: absolute; background: #1a1a1a; color: white; border-radius: 10px; padding: 12px 14px; font-size: 12px; pointer-events: none; z-index: 100; max-width: 280px; box-shadow: 0 12px 36px rgba(0,0,0,0.4); animation: fadeIn 0.12s ease-out; }
+  .chart-tooltip .ai-pill { background: #2e7d32; color: white; font-size: 9px; padding: 3px 8px; border-radius: 5px; letter-spacing: 0.6px; font-weight: 800; margin-bottom: 8px; display: inline-block; }
+  .chart-tooltip .time { font-size: 10px; color: #b8b8b8; margin-bottom: 4px; letter-spacing: 0.5px; font-weight: 600; }
+  .chart-tooltip .msg { font-size: 12px; line-height: 1.45; color: white; }
 
   /* === KPI STRIP === */
   .kpi-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 16px 24px; background: linear-gradient(135deg, #1a6b1a 0%, #2e7d32 100%); }
@@ -2594,6 +2601,11 @@ function renderRoom(app) {
         <div class="chart-card">
           <div style="font-size:11px;color:#888;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">24-hour history</div>
           <div id="chart-mount">${chartSvg(room)}</div>
+          <div class="chart-tooltip" id="chart-tooltip" style="display:none">
+            <div class="ai-pill">Atmos AI</div>
+            <div class="time"></div>
+            <div class="msg"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -2607,6 +2619,27 @@ function renderRoom(app) {
     if (_atmosAnimating) return;
     animateAtmosToggle(room);
   };
+
+  // Chart event hover tooltip (deviation markers)
+  const tooltip = document.getElementById('chart-tooltip');
+  const card = document.querySelector('.chart-card');
+  if (tooltip && card) {
+    document.querySelectorAll('.chart-event').forEach(g => {
+      g.addEventListener('mouseenter', () => {
+        tooltip.querySelector('.time').textContent = g.dataset.time || '';
+        tooltip.querySelector('.msg').textContent = g.dataset.msg || '';
+        tooltip.style.display = 'block';
+      });
+      g.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left + 14;
+        const y = e.clientY - rect.top + 14;
+        tooltip.style.left = Math.min(x, rect.width - 300) + 'px';
+        tooltip.style.top = Math.max(0, y) + 'px';
+      });
+      g.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    });
+  }
 }
 
 // === ATMOS TOGGLE ANIMATION ===
@@ -2709,22 +2742,32 @@ function chartSvg(room) {
   const N = 48;
   const activatedAt = N * 0.7;
   const on = room.atmosOn;
+  const seed = roomSeed(room.id);
 
-  function pathFor(beforeBase, afterBase, beforeAmp, afterAmp, scaleMin, scaleMax, color) {
+  // Deterministic noise so chart doesn't jiggle on each render
+  function noise(i, salt) {
+    return Math.sin(i * 1.7 + seed * salt + salt) * 0.5;
+  }
+
+  function computePoints(beforeBase, afterBase, beforeAmp, afterAmp, scaleMin, scaleMax, salt) {
     const points = [];
     for (let i = 0; i < N; i++) {
       const isBefore = i < activatedAt;
       let v;
       if (on) {
-        v = isBefore ? beforeBase + (Math.random() - 0.5) * beforeAmp : afterBase + (Math.random() - 0.5) * afterAmp;
+        v = isBefore ? beforeBase + noise(i, salt) * beforeAmp : afterBase + noise(i, salt) * afterAmp;
       } else {
-        v = beforeBase + (Math.random() - 0.5) * beforeAmp;
+        v = beforeBase + noise(i, salt) * beforeAmp;
       }
       const x = padL + (i / (N - 1)) * innerW;
       const denom = (scaleMax - scaleMin) || 1;
       const y = padT + innerH - ((v - scaleMin) / denom) * innerH;
       points.push([x, Math.max(padT, Math.min(padT + innerH, y))]);
     }
+    return points;
+  }
+
+  function pathFromPoints(points, color) {
     const d = points.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
     return `<path d="${d}" stroke="${color}" stroke-width="1.6" fill="none"/>`;
   }
@@ -2734,13 +2777,48 @@ function chartSvg(room) {
   const humMid = rangeMid(crop.humidityRange);
   const o2Mid = rangeMid(crop.o2Range);
 
-  const lines = [
-    pathFor(ethyTarget * 4, ethyTarget * 0.8, ethyTarget * 1.5, ethyTarget * 0.05, 0, ethyTarget * 6, '#1a6b1a'),
-    pathFor(tempMid + 3, tempMid, 0.6, 0.2, tempMid - 5, tempMid + 8, '#4caf50'),
-    pathFor(humMid - 2, humMid, 1.5, 0.4, humMid - 12, humMid + 4, '#7fc4be'),
-    pathFor(1.01, 1.01, 0.04, 0.005, 0.95, 1.10, '#4db6ac'),
-    pathFor(o2Mid * 6, o2Mid, 0.8, 0.1, 0, Math.max(o2Mid * 8, 25), '#a8d8d4')
+  // For attention rooms, override "after" base values so the trace stays elevated/drifted
+  // through the whole chart (Atmos cannot fully compensate).
+  const att = !!room.attentionReason;
+  const ethyAfterBase = att ? ethyTarget * 1.6  : ethyTarget * 0.8;
+  const ethyAfterAmp  = att ? ethyTarget * 0.4  : ethyTarget * 0.05;
+  const tempAfterBase = att ? tempMid + 1.5     : tempMid;
+  const tempAfterAmp  = att ? 0.6               : 0.2;
+  const presAfterBase = att ? 0.99              : 1.01;
+  const presAfterAmp  = att ? 0.025             : 0.005;
+
+  const lineDefs = [
+    { key: 'ethylene', color: '#1a6b1a', label: 'Ethylene',    points: computePoints(ethyTarget * 4, ethyAfterBase, ethyTarget * 1.5, ethyAfterAmp, 0, ethyTarget * 6, 7) },
+    { key: 'temp',     color: '#4caf50', label: 'Temperature', points: computePoints(tempMid + 3,    tempAfterBase, 0.6, tempAfterAmp,             tempMid - 5, tempMid + 8, 11) },
+    { key: 'hum',      color: '#7fc4be', label: 'Humidity',    points: computePoints(humMid - 2,     humMid,        1.5, 0.4,                       humMid - 12, humMid + 4, 13) },
+    { key: 'pres',     color: '#4db6ac', label: 'Pressure',    points: computePoints(1.01,           presAfterBase, 0.04, presAfterAmp,             0.95, 1.10, 17) },
+    { key: 'o2',       color: '#a8d8d4', label: 'Oxygen',      points: computePoints(o2Mid * 6,      o2Mid,         0.8, 0.1,                       0, Math.max(o2Mid * 8, 25), 19) }
   ];
+
+  const lines = lineDefs.map(l => pathFromPoints(l.points, l.color));
+
+  // Time labels (11:00 .. 22:50, ~10 min apart on N=48 grid)
+  const TIMES = ['11:00','11:20','11:40','12:00','12:20','12:40','13:00','13:20','13:40','14:00','14:20','14:40','15:00','15:20','15:40','16:00','16:20','16:40','17:00','17:20','17:40','18:00','18:20','18:40','19:00','19:20','19:40','20:00','20:20','20:40','21:00','21:20','21:40','22:00','22:20','22:40','23:00','23:10','23:20','23:30','23:40','23:50','00:00','00:10','00:20','00:30','00:40','00:50'];
+  function timeAt(i) { return TIMES[i] || ''; }
+
+  // Deviation events for attention rooms — tied to the metric most likely to drift
+  let events = [];
+  if (att) {
+    events = [
+      { metric: 'ethylene', i: 26, msg: 'Ethylene started increasing — doors likely open too long. AC duty cycle elevated 38%.', tag: 'Atmos AI' },
+      { metric: 'pres',     i: 30, msg: 'Pressure trending down. Possible storage leak — inspect seals on next walk.',           tag: 'Atmos AI' },
+      { metric: 'temp',     i: 34, msg: 'Temperature drift detected. Compressor lag — schedule preventive maintenance.',         tag: 'Atmos AI' }
+    ];
+  }
+  const eventMarkers = events.map(ev => {
+    const line = lineDefs.find(l => l.key === ev.metric);
+    if (!line || !line.points[ev.i]) return '';
+    const [x, y] = line.points[ev.i];
+    return `<g class="chart-event" data-time="${escHtml(timeAt(ev.i))}" data-tag="${escHtml(ev.tag)}" data-msg="${escHtml(ev.msg)}">
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="#c0392b" stroke="white" stroke-width="2"/>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="#c0392b" opacity="0.18"/>
+    </g>`;
+  }).join('');
 
   const activatedX = padL + (activatedAt / (N - 1)) * innerW;
   const activatedLine = on ? `
@@ -2769,6 +2847,7 @@ function chartSvg(room) {
   return `<svg viewBox="0 0 ${W} ${H + 24}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block;">
     ${lines.join('')}
     ${activatedLine}
+    ${eventMarkers}
     ${xLabels}
     ${legend}
   </svg>`;
