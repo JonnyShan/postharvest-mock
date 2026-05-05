@@ -191,6 +191,45 @@
   .system-status-card .pill { background: #2e7d32; color: white; padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 700; margin-top: 6px; display: inline-block; }
   .system-status-card .pill.warn { background: #b87800; }
   .chart-card { background: white; border-radius: 10px; padding: 16px; margin: 16px 24px 24px; }
+
+  /* === KPI STRIP === */
+  .kpi-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 16px 24px; background: linear-gradient(135deg, #1a6b1a 0%, #2e7d32 100%); }
+  .kpi-card { background: rgba(255,255,255,0.10); backdrop-filter: blur(6px); border-radius: 12px; padding: 14px 18px; color: white; }
+  .kpi-card .lbl { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,0.75); font-weight: 600; }
+  .kpi-card .val { font-size: 26px; font-weight: 700; margin-top: 4px; line-height: 1.1; }
+  .kpi-card .delta { font-size: 11px; color: #b9f2b9; margin-top: 2px; font-weight: 600; }
+  .kpi-card .delta.down { color: #ffc6c6; }
+
+  /* === TILE METRICS GRID === */
+  .tile-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+  .tile-metric { background: #f7faf7; border-radius: 6px; padding: 6px 8px; }
+  .tile-metric .m-lbl { font-size: 9px; color: #888; letter-spacing: 0.4px; text-transform: uppercase; font-weight: 600; }
+  .tile-metric .m-val { font-size: 13px; font-weight: 700; color: #1a1a1a; margin-top: 1px; }
+  .tile.attention .tile-metric { background: #fff0ef; }
+  .tile.attention .tile-metric .m-val.alert { color: #c0392b; }
+
+  /* === INJECT BUTTON === */
+  .inject-btn { background: #ff9800; color: white; border: none; padding: 6px 12px; border-radius: 16px; cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+  .inject-btn:hover { background: #f57c00; }
+
+  /* === AI TOAST === */
+  .ai-toast { position: fixed; bottom: 24px; right: 24px; background: white; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.3); padding: 16px 18px; width: 340px; z-index: 2000; border-left: 4px solid #2e7d32; animation: toastIn 0.4s cubic-bezier(0.2, 0.8, 0.3, 1.2); }
+  .ai-toast .head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .ai-toast .head .badge-ai { background: #2e7d32; color: white; font-size: 9px; padding: 2px 8px; border-radius: 8px; font-weight: 700; letter-spacing: 0.8px; }
+  .ai-toast .head .x { margin-left: auto; background: transparent; border: none; cursor: pointer; color: #888; font-size: 18px; line-height: 1; padding: 0 4px; }
+  .ai-toast .msg { font-size: 13px; color: #1a1a1a; line-height: 1.4; margin-bottom: 12px; }
+  .ai-toast .actions { display: flex; gap: 8px; }
+  .ai-toast .actions button { flex: 1; padding: 8px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 12px; }
+  .ai-toast .actions .accept { background: #2e7d32; color: white; }
+  .ai-toast .actions .accept:hover { background: #1a6b1a; }
+  .ai-toast .actions .dismiss { background: #f0f0f0; color: #555; }
+  @keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* === SPLASH TRUST STRIP === */
+  .splash-trust { text-align: center; margin-top: 32px; }
+  .splash-trust .lbl { color: #6b8c63; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+  .splash-trust .pills { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .splash-trust .pill { background: rgba(255,255,255,0.06); border: 1px solid rgba(168,197,160,0.25); color: #c8dcc4; padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -399,6 +438,7 @@ const DEFAULT_STATE = {
   wizardDraft: { name: '', hq: '', rooms: [] },
   notifications: [],
   notifPanelOpen: false,
+  toast: null,
   history: [],
   historyIdx: -1
 };
@@ -576,6 +616,112 @@ function roomEthylene(room) {
   return Math.round(t * (3.5 + seed) * 1000) / 1000;
 }
 
+function roomTemp(room) {
+  const crop = CROPS[room.cropId];
+  const t = rangeMid(crop.tempRange);
+  const seed = roomSeed(room.id);
+  if (room.attentionReason) return Math.round((t + 1.5) * 10) / 10;
+  if (room.atmosOn) return Math.round((t + (seed - 0.5) * 0.4) * 10) / 10;
+  return Math.round((t + 2.5 + seed * 1.5) * 10) / 10;
+}
+
+function roomO2(room) {
+  const crop = CROPS[room.cropId];
+  const t = rangeMid(crop.o2Range);
+  const seed = roomSeed(room.id);
+  if (room.attentionReason) return Math.round((t * 1.4) * 10) / 10;
+  if (room.atmosOn) return Math.round((t * (0.95 + (seed - 0.5) * 0.1)) * 10) / 10;
+  return Math.round((20.8 - seed * 0.5) * 10) / 10; // ambient
+}
+
+function roomCO2(room) {
+  const crop = CROPS[room.cropId];
+  const t = rangeMid(crop.co2Range);
+  const seed = roomSeed(room.id);
+  if (room.attentionReason) return Math.round((t * 0.6) * 10) / 10;
+  if (room.atmosOn) return Math.round((t * (0.97 + (seed - 0.5) * 0.06)) * 10) / 10;
+  return Math.round((0.04 + seed * 0.05) * 100) / 100; // ambient
+}
+
+function facilitySeed(name) {
+  let h = 0;
+  const s = name || '';
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h % 10000) / 10000;
+}
+
+function facilityKpis(facility) {
+  const seed = facilitySeed(facility.name);
+  const onCount = facility.rooms.filter(r => r.atmosOn && !r.attentionReason).length;
+  const totalRooms = facility.rooms.length || 1;
+  const efficiency = onCount / totalRooms; // 0..1
+  // Per-room baseline: $1,200/mo savings at full Atmos efficiency, ±15% per facility
+  const perRoom = 1100 + Math.round(seed * 250);
+  const savings = Math.round(perRoom * onCount);
+  const tons = Math.round((onCount * 0.18 + seed * 0.4) * 10) / 10;
+  // Energy delta: -12% to -22%, scaled by efficiency
+  const energy = -Math.round(12 + efficiency * 10 + seed * 2);
+  return { savings, tons, energy };
+}
+
+const AI_SUGGESTIONS = [
+  (n) => `Room ${n} ethylene rising. Want me to seal door cycle and increase scrubber rate?`,
+  (n) => `Room ${n} temperature drift detected. Auto-tune AC compressor?`,
+  (n) => `Room ${n} pressure trending down. Run diagnostic on inlet valve?`
+];
+
+function injectIncident() {
+  const facility = state.facility;
+  if (!facility || !facility.rooms.length) return;
+  const candidates = facility.rooms.filter(r => !r.attentionReason);
+  if (!candidates.length) return;
+  const target = candidates[Math.floor(Math.random() * candidates.length)];
+  const reasons = [
+    'Sudden ethylene spike — investigate fruit ripeness',
+    'Door cycle anomaly — check seal integrity',
+    'Compressor lag — temperature rising'
+  ];
+  target.attentionReason = reasons[Math.floor(Math.random() * reasons.length)];
+  // Notification
+  const idx = facility.rooms.indexOf(target);
+  state.notifications = state.notifications || [];
+  state.notifications.unshift({
+    timeAgo: 'Just now',
+    roomName: `Room ${idx + 1}: ${target.name}`,
+    roomId: target.id,
+    issue: 'New incident detected',
+    severity: 'crit',
+    cause: target.attentionReason
+  });
+  // AI toast
+  const sugIdx = Math.floor(Math.random() * AI_SUGGESTIONS.length);
+  state.toast = {
+    message: AI_SUGGESTIONS[sugIdx](idx + 1),
+    roomId: target.id
+  };
+  saveState();
+  render();
+}
+
+function dismissToast() {
+  state.toast = null;
+  saveState();
+  render();
+}
+
+function acceptToast() {
+  if (!state.toast || !state.facility) { dismissToast(); return; }
+  const room = state.facility.rooms.find(r => r.id === state.toast.roomId);
+  if (room) {
+    room.attentionReason = null;
+    // Drop matching notification
+    state.notifications = (state.notifications || []).filter(n => n.roomId !== room.id);
+  }
+  state.toast = null;
+  saveState();
+  render();
+}
+
 function computeBarFills(room) {
   const crop = CROPS[room.cropId];
   const on = room.atmosOn;
@@ -637,6 +783,16 @@ function renderSplash(app) {
           <div class="icon">🤖</div>
           <h3>AI auto-mock</h3>
           <p>Just type your company name. We'll search the web and pre-fill addresses, rooms, and products for you.</p>
+        </div>
+      </div>
+      <div class="splash-trust">
+        <div class="lbl">Trusted by leading growers</div>
+        <div class="pills">
+          <span class="pill">Rockit Apple</span>
+          <span class="pill">Tru Cape</span>
+          <span class="pill">Costa Group</span>
+          <span class="pill">Calypso Mango</span>
+          <span class="pill">Driscoll's</span>
         </div>
       </div>
     </div>
@@ -1027,6 +1183,7 @@ function renderDashboard(app) {
   const allOn = facility.rooms.length > 0 && facility.rooms.every(r => r.atmosOn);
   const notifs = state.notifications || [];
   const notifCount = notifs.length;
+  const kpis = facilityKpis(facility);
 
   app.innerHTML = `
     <div class="frame">
@@ -1042,10 +1199,29 @@ function renderDashboard(app) {
             <span>ROOM</span><span class="crumb-dot todo">○</span>
           </div>
           <div class="user">
+            <button class="inject-btn" id="inject-btn" title="Demo: inject incident">⚡ Inject</button>
             <button class="reset" id="reset-btn">Reset Demo</button>
             <button class="bell-btn" id="bell-btn" title="Notifications">🔔${notifCount > 0 ? `<span class="bell-badge">${notifCount}</span>` : ''}</button>
             <span>${escHtml((facility.name || 'demo').slice(0, 20))}</span>
             <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;">👤</div>
+          </div>
+        </div>
+
+        <div class="kpi-strip">
+          <div class="kpi-card">
+            <div class="lbl">Saved this month</div>
+            <div class="val">$${kpis.savings.toLocaleString()}</div>
+            <div class="delta">↑ vs Atmos OFF baseline</div>
+          </div>
+          <div class="kpi-card">
+            <div class="lbl">Spoilage avoided</div>
+            <div class="val">${kpis.tons} tons</div>
+            <div class="delta">≈ ${Math.round(kpis.tons * 1800).toLocaleString()} units shipped</div>
+          </div>
+          <div class="kpi-card">
+            <div class="lbl">Energy delta</div>
+            <div class="val">${kpis.energy}%</div>
+            <div class="delta">vs last month</div>
           </div>
         </div>
 
@@ -1070,16 +1246,27 @@ function renderDashboard(app) {
               ${facility.rooms.map((r, i) => {
                 const crop = CROPS[r.cropId] || { displayName: '(unknown)' };
                 const ethy = roomEthylene(r);
+                const temp = roomTemp(r);
+                const o2 = roomO2(r);
+                const co2 = roomCO2(r);
                 const attention = r.attentionReason;
                 const status = attention ? 'crit' : (r.atmosOn ? 'ok' : 'warn');
                 const badgeText = attention ? 'NEEDS ATTENTION' : (r.atmosOn ? 'At optimal' : 'Operational');
+                const alertCls = attention ? 'alert' : '';
                 return `
                   <div class="tile ${attention ? 'attention' : ''}" data-id="${escHtml(r.id)}">
                     <h4>#${i + 1} · ${escHtml(r.name)}</h4>
                     <div class="crop">${escHtml(crop.displayName)}</div>
-                    <div class="ethy">${ethy.toFixed(3)} <small>ppm</small></div>
-                    <span class="badge ${status}">${badgeText}</span>
-                    <span class="atmos-pill ${r.atmosOn ? 'on' : ''}">Atmos ${r.atmosOn ? 'ON' : 'OFF'}</span>
+                    <div class="tile-metrics">
+                      <div class="tile-metric"><div class="m-lbl">Ethylene</div><div class="m-val ${alertCls}">${ethy.toFixed(3)} <small>ppm</small></div></div>
+                      <div class="tile-metric"><div class="m-lbl">Temp</div><div class="m-val ${alertCls}">${temp}°C</div></div>
+                      <div class="tile-metric"><div class="m-lbl">O₂</div><div class="m-val ${alertCls}">${o2}%</div></div>
+                      <div class="tile-metric"><div class="m-lbl">CO₂</div><div class="m-val ${alertCls}">${co2}%</div></div>
+                    </div>
+                    <div style="margin-top:10px;">
+                      <span class="badge ${status}">${badgeText}</span>
+                      <span class="atmos-pill ${r.atmosOn ? 'on' : ''}">Atmos ${r.atmosOn ? 'ON' : 'OFF'}</span>
+                    </div>
                     ${attention ? `<div class="reason">⚠ ${escHtml(attention)}</div>` : ''}
                   </div>
                 `;
@@ -1092,10 +1279,14 @@ function renderDashboard(app) {
       </div>
     </div>
     ${state.notifPanelOpen ? renderNotifPanel(notifs) : ''}
+    ${state.toast ? renderToast(state.toast) : ''}
   `;
 
   document.getElementById('reset-btn').onclick = () => { if (confirm('Reset demo to splash?')) resetState(); };
   bindNavArrows();
+  bindToast();
+  const inj = document.getElementById('inject-btn');
+  if (inj) inj.onclick = injectIncident;
   document.getElementById('t-map').onclick = () => { state.dashboardView = 'map'; state.notifPanelOpen = false; saveState(); render(); };
   document.getElementById('t-grid').onclick = () => { state.dashboardView = 'grid'; state.notifPanelOpen = false; saveState(); render(); };
   document.getElementById('add-room').onclick = () => {
@@ -1130,6 +1321,31 @@ function renderDashboard(app) {
   if (state.dashboardView === 'map') {
     setTimeout(() => initFacilityMap(facility), 0);
   }
+}
+
+function renderToast(toast) {
+  return `
+    <div class="ai-toast" id="ai-toast">
+      <div class="head">
+        <span class="badge-ai">AI</span>
+        <span style="font-size:12px;color:#888;font-weight:600;letter-spacing:0.5px;">SUGGESTION</span>
+        <button class="x" id="toast-x" title="Dismiss">×</button>
+      </div>
+      <div class="msg">${escHtml(toast.message)}</div>
+      <div class="actions">
+        <button class="dismiss" id="toast-dismiss">Dismiss</button>
+        <button class="accept" id="toast-accept">Accept</button>
+      </div>
+    </div>
+  `;
+}
+
+function bindToast() {
+  const t = document.getElementById('ai-toast');
+  if (!t) return;
+  document.getElementById('toast-x').onclick = dismissToast;
+  document.getElementById('toast-dismiss').onclick = dismissToast;
+  document.getElementById('toast-accept').onclick = acceptToast;
 }
 
 function renderNotifPanel(notifs) {
