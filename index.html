@@ -131,6 +131,10 @@
   .dash-section.closed .caret { transform: rotate(-90deg); }
   .dash-section-header .title { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #1a1a1a; }
   .dash-section-header .meta { font-size: 11px; color: #888; margin-left: auto; font-weight: 500; }
+  .grid-filter-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-left: 16px; }
+  .filter-pill { background: white; color: #555; border: 1.5px solid #d8e0d6; padding: 4px 10px; border-radius: 12px; cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  .filter-pill:hover { border-color: #2e7d32; color: #1a1a1a; }
+  .filter-pill.active { background: #2e7d32; color: white; border-color: #2e7d32; }
   .dash-section-body { padding: 16px 18px 18px; }
   .dash-section.closed .dash-section-body { display: none; }
   .grid-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
@@ -743,6 +747,7 @@ const DEFAULT_STATE = {
   dashboardView: 'map',
   mapOpen: true,
   gridOpen: true,
+  gridFilter: 'all',
   currentRoomId: null,
   aiInput: '',
   wizardDraft: { name: '', hq: '', rooms: [] },
@@ -998,6 +1003,40 @@ const ORDER_OPTIONS = [
   { key: 'pressure',      label: 'Atmospheric Pressure' },
   { key: 'unstable',      label: 'Most Unstable' }
 ];
+
+// Detect site from room name (e.g. "Te Ipu Bay 1" -> "Te Ipu Bay")
+function roomSite(room) {
+  const m = (room.name || '').match(/^(.+?\s+Bay)/i);
+  return m ? m[1].trim() : (room.name || '').split(/\s+/).slice(0, 2).join(' ');
+}
+
+function gridFilterOptions(facility) {
+  const options = [{ key: 'all', label: 'All' }];
+  const sites = new Set();
+  facility.rooms.forEach(r => sites.add(roomSite(r)));
+  Array.from(sites).sort().forEach(s => options.push({ key: 'site:' + s, label: s }));
+  (state.notifRecipients || []).forEach(rec => {
+    if (rec.name && rec.name.trim()) options.push({ key: 'person:' + rec.id, label: rec.name.trim() });
+  });
+  return options;
+}
+
+function roomMatchesFilter(room, idx, filter) {
+  if (!filter || filter === 'all') return true;
+  if (filter.startsWith('site:')) {
+    return roomSite(room) === filter.slice(5);
+  }
+  if (filter.startsWith('person:')) {
+    const id = filter.slice(7);
+    const rec = (state.notifRecipients || []).find(r => r.id === id);
+    if (!rec) return true;
+    const roomNum = idx + 1;
+    const start = parseInt(rec.startRoom) || 1;
+    const end = parseInt(rec.endRoom) || start;
+    return roomNum >= start && roomNum <= end;
+  }
+  return true;
+}
 
 // Movement score across all 5 factors (lower = more stable).
 function roomStabilityScore(room) {
@@ -1843,11 +1882,20 @@ function renderDashboard(app) {
             <div class="dash-section-header" data-section="grid">
               <span class="caret">▾</span>
               <span class="title">Grid</span>
+              ${state.gridOpen ? `
+                <div class="grid-filter-pills">
+                  ${gridFilterOptions(facility).map(o => `
+                    <button class="filter-pill ${(state.gridFilter || 'all') === o.key ? 'active' : ''}" data-filter="${escHtml(o.key)}">${escHtml(o.label)}</button>
+                  `).join('')}
+                </div>
+              ` : ''}
               <span class="meta">${facility.rooms.length} rooms · ${facility.rooms.filter(r => r.atmosOn && !r.attentionReason).length} at optimal</span>
             </div>
             <div class="dash-section-body">
               <div class="grid-tiles">
-                ${sortRoomsByOrder(facility.rooms, state.orderBy).map((entry) => {
+                ${sortRoomsByOrder(facility.rooms, state.orderBy)
+                  .filter(entry => roomMatchesFilter(entry.room, entry.origIdx, state.gridFilter))
+                  .map((entry) => {
                   const r = entry.room;
                   const i = entry.origIdx;
                   const crop = CROPS[r.cropId] || { displayName: '(unknown)' };
@@ -1902,10 +1950,20 @@ function renderDashboard(app) {
   const inj = document.getElementById('inject-btn');
   if (inj) inj.onclick = injectIncident;
   document.querySelectorAll('.dash-section-header').forEach(h => {
-    h.onclick = () => {
+    h.onclick = (e) => {
+      // Don't toggle if click landed on filter pills
+      if (e.target.closest('.grid-filter-pills')) return;
       const s = h.dataset.section;
       if (s === 'map') state.mapOpen = !state.mapOpen;
       else if (s === 'grid') state.gridOpen = !state.gridOpen;
+      saveState();
+      render();
+    };
+  });
+  document.querySelectorAll('.filter-pill').forEach(p => {
+    p.onclick = (e) => {
+      e.stopPropagation();
+      state.gridFilter = p.dataset.filter;
       saveState();
       render();
     };
