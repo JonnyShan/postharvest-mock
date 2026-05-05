@@ -733,15 +733,37 @@ const ATTENTION_REASONS = [
 ];
 
 function assignAttention(rooms) {
+  // Target 10% attention rooms (red), spaced evenly.
   if (!rooms || rooms.length === 0) return;
-  let indices;
-  if (rooms.length >= 20)      indices = [6, 13];
-  else if (rooms.length >= 12) indices = [3, 8];
-  else if (rooms.length >= 10) indices = [Math.floor(rooms.length / 2)];
-  else if (rooms.length >= 4)  indices = [rooms.length - 2];
-  else                         indices = [rooms.length - 1];
+  const total = rooms.length;
+  const n = Math.max(1, Math.round(total * 0.10));
+  const indices = [];
+  for (let i = 0; i < n; i++) {
+    indices.push(Math.floor((i + 0.5) / n * total));
+  }
   indices.forEach((idx, i) => {
     if (rooms[idx]) rooms[idx].attentionReason = ATTENTION_REASONS[i % ATTENTION_REASONS.length];
+  });
+}
+
+function assignAtmosDistribution(rooms) {
+  // Target distribution: 70% Atmos ON (green), 20% Atmos OFF (orange),
+  // 10% attention (red — already marked by assignAttention).
+  // Call AFTER assignAttention.
+  const total = rooms.length;
+  if (!total) return;
+  const targetOff = Math.max(0, Math.round(total * 0.20));
+  const nonAttIdx = rooms.map((r, i) => r.attentionReason ? -1 : i).filter(i => i >= 0);
+  const offSet = new Set();
+  if (targetOff > 0 && nonAttIdx.length > 0) {
+    for (let i = 0; i < targetOff && i < nonAttIdx.length; i++) {
+      const k = Math.floor((i + 0.5) / targetOff * nonAttIdx.length);
+      offSet.add(nonAttIdx[Math.min(k, nonAttIdx.length - 1)]);
+    }
+  }
+  rooms.forEach((r, i) => {
+    if (r.attentionReason) r.atmosOn = false;
+    else r.atmosOn = !offSet.has(i);
   });
 }
 
@@ -1207,6 +1229,7 @@ function acceptAiMatch(matched) {
     }))
   };
   assignAttention(state.facility.rooms);
+  assignAtmosDistribution(state.facility.rooms);
   state.notifications = makeNotifications(state.facility.rooms);
   state._aiPhase = null;
   state._aiMatched = null;
@@ -1410,6 +1433,7 @@ function renderWizardStep2(app) {
       rooms: state.wizardDraft.rooms.map(r => ({ ...r, atmosOn: r.atmosOn || false }))
     };
     assignAttention(state.facility.rooms);
+    assignAtmosDistribution(state.facility.rooms);
     state.notifications = makeNotifications(state.facility.rooms);
     state.wizardDraft = { name: '', hq: '', rooms: [] };
     state._newRoom = { name: '', address: '', cropId: null, cropDisplay: '' };
