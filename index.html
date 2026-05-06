@@ -266,6 +266,16 @@
   .chart-tooltip .time { font-size: 10px; color: #b8b8b8; margin-bottom: 4px; letter-spacing: 0.5px; font-weight: 600; }
   .chart-tooltip .msg { font-size: 12px; line-height: 1.45; color: white; }
 
+  /* === ROI RIBBON === */
+  .roi-ribbon { display: flex; align-items: stretch; gap: 0; padding: 10px 24px; background: linear-gradient(90deg, #0d4d11 0%, #1a6b1a 100%); border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .roi-ribbon .roi-stat { flex: 1; padding: 4px 18px; border-right: 1px solid rgba(255,255,255,0.12); display: flex; flex-direction: column; justify-content: center; }
+  .roi-ribbon .roi-stat:last-child { border-right: none; }
+  .roi-ribbon .roi-stat:first-child { padding-left: 0; }
+  .roi-ribbon .roi-lbl { font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255,255,255,0.68); font-weight: 700; margin-bottom: 2px; }
+  .roi-ribbon .roi-val { font-size: 22px; font-weight: 800; color: white; line-height: 1.05; letter-spacing: 0.3px; }
+  .roi-ribbon .roi-val .roi-unit { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.7); margin-left: 4px; letter-spacing: 0.5px; }
+  .roi-ribbon .roi-sub { font-size: 10px; color: #b9f2b9; margin-top: 2px; font-weight: 600; }
+
   /* === KPI STRIP === */
   .kpi-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 16px 24px; background: linear-gradient(135deg, #1a6b1a 0%, #2e7d32 100%); }
   .kpi-card { background: rgba(255,255,255,0.10); backdrop-filter: blur(6px); border-radius: 12px; padding: 14px 18px; color: white; }
@@ -281,6 +291,31 @@
   .tile-metric .m-val { font-size: 13px; font-weight: 700; color: #1a1a1a; margin-top: 1px; }
   .tile.attention .tile-metric { background: #fff0ef; }
   .tile.attention .tile-metric .m-val.alert { color: #c0392b; }
+
+  /* === ENERGY CHIP === */
+  .energy-chip { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; margin-left: 4px; padding: 3px 9px; border-radius: 10px; background: #f0f5f0; color: #555; font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+  .energy-chip .e-val { color: #1a1a1a; font-weight: 800; }
+  .tile.attention .energy-chip { background: #fff0ef; color: #b03020; }
+  .tile.off .energy-chip { background: #fff5e1; color: #b87800; }
+
+  /* === CHART RANGE TABS === */
+  .chart-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .chart-tab { padding: 6px 14px; border-radius: 14px; background: #f0f5f0; color: #666; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; border: 1.5px solid transparent; transition: 0.15s; }
+  .chart-tab:hover { background: #e0ebe0; }
+  .chart-tab.active { background: #1a6b1a; color: white; border-color: #1a6b1a; }
+  .chart-range-lbl { display: inline-block; margin-left: 8px; font-size: 10px; color: #888; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  /* === QR MODAL === */
+  .qr-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.15s ease-out; padding: 20px; }
+  .qr-modal { background: white; border-radius: 18px; padding: 28px 32px 24px; max-width: 380px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,0.3); text-align: center; }
+  .qr-modal h3 { font-size: 16px; color: #1a1a1a; margin-bottom: 4px; font-weight: 700; }
+  .qr-modal .qr-sub { font-size: 12px; color: #777; margin-bottom: 18px; }
+  .qr-modal .qr-img { display: block; margin: 0 auto 14px; width: 240px; height: 240px; border-radius: 10px; border: 1px solid #eee; }
+  .qr-modal .qr-url { font-size: 10px; color: #999; word-break: break-all; padding: 8px 12px; background: #f7faf7; border-radius: 8px; margin-bottom: 14px; font-family: monospace; }
+  .qr-modal .qr-close { background: #1a6b1a; color: white; border: none; padding: 10px 24px; border-radius: 22px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; }
+  .qr-modal .qr-close:hover { background: #155515; }
+  .qr-btn { background: #f0f5f0; color: #1a6b1a; border: 1.5px solid #d0e0d0; padding: 7px 14px; border-radius: 16px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; margin-left: 8px; }
+  .qr-btn:hover { background: #e0ebe0; }
 
   /* === INJECT BUTTON === */
   .inject-btn { background: #ff9800; color: white; border: none; padding: 6px 12px; border-radius: 16px; cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
@@ -766,6 +801,8 @@ const DEFAULT_STATE = {
   mapOpen: true,
   gridOpen: true,
   gridFilter: 'all',
+  chartRange: '24h',
+  qrOpen: false,
   currentRoomId: null,
   aiInput: '',
   wizardDraft: { name: '', hq: '', rooms: [] },
@@ -1188,6 +1225,26 @@ function facilityKpis(facility) {
   // Energy delta: -12% to -22%, scaled by efficiency
   const energy = -Math.round(12 + efficiency * 10 + seed * 2);
   return { qualityGrade, tons, energy };
+}
+
+function facilityRoi(facility) {
+  const seed = facilitySeed(facility.name);
+  const rooms = facility.rooms.length || 1;
+  // ~$3.4k-$4.6k saved/room/season (prevented loss + energy + labor)
+  const dollarsSaved = Math.round(rooms * (3400 + seed * 1200));
+  // Incidents caught — 0.6-1.1 per room per season
+  const incidentsCaught = Math.max(2, Math.floor(rooms * (0.6 + seed * 0.5)));
+  // Shrinkage avoided 1.6%-3.2% absolute
+  const shrinkageAvoided = Math.round((1.6 + seed * 1.6) * 10) / 10;
+  return { dollarsSaved, incidentsCaught, shrinkageAvoided };
+}
+
+// Energy $/day per room — atmos-on rooms run leaner, attention rooms cost more
+function roomEnergyCost(room) {
+  const s = roomSeed(room.id);
+  const base = room.atmosOn ? 9 : 14; // atmos avg ~35% lower
+  const penalty = room.attentionReason ? 4 : 0;
+  return Math.round((base + s * 3 + penalty) * 10) / 10;
 }
 
 const AI_SUGGESTIONS = [
@@ -1820,6 +1877,7 @@ function renderDashboard(app) {
   const notifs = state.notifications || [];
   const notifCount = notifs.length;
   const kpis = facilityKpis(facility);
+  const roi = facilityRoi(facility);
 
   app.innerHTML = `
     <div class="frame">
@@ -1840,6 +1898,24 @@ function renderDashboard(app) {
             <button class="bell-btn" id="bell-btn" title="Alerts">Alerts${notifCount > 0 ? `<span class="bell-badge">${notifCount}</span>` : ''}</button>
             <span>${escHtml((facility.name || 'demo').slice(0, 20))}</span>
             <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;letter-spacing:0.5px;">${escHtml((facility.name || 'demo').slice(0, 2).toUpperCase())}</div>
+          </div>
+        </div>
+
+        <div class="roi-ribbon">
+          <div class="roi-stat">
+            <div class="roi-lbl">Prevented loss · season</div>
+            <div class="roi-val">$${roi.dollarsSaved.toLocaleString()}<span class="roi-unit">USD</span></div>
+            <div class="roi-sub">vs uncontrolled storage baseline</div>
+          </div>
+          <div class="roi-stat">
+            <div class="roi-lbl">Shrinkage avoided</div>
+            <div class="roi-val">${roi.shrinkageAvoided}<span class="roi-unit">% absolute</span></div>
+            <div class="roi-sub">industry avg 4.2% → ${(4.2 - roi.shrinkageAvoided).toFixed(1)}%</div>
+          </div>
+          <div class="roi-stat">
+            <div class="roi-lbl">Incidents caught</div>
+            <div class="roi-val">${roi.incidentsCaught}<span class="roi-unit">auto-resolved</span></div>
+            <div class="roi-sub">before reaching shipment grade</div>
           </div>
         </div>
 
@@ -1947,6 +2023,7 @@ function renderDashboard(app) {
                       <div style="margin-top:10px;">
                         <span class="badge ${status}">${badgeText}</span>
                         <span class="atmos-pill ${r.atmosOn ? 'on' : ''}">Atmos ${r.atmosOn ? 'ON' : 'OFF'}</span>
+                        <span class="energy-chip" title="Estimated energy spend per day">Energy <span class="e-val">$${roomEnergyCost(r).toFixed(2)}</span>/day</span>
                       </div>
                       ${attention ? `<div class="reason">${escHtml(attention)}</div>` : ''}
                     </div>
@@ -2595,6 +2672,37 @@ function bindToast() {
   document.getElementById('toast-accept').onclick = acceptToast;
 }
 
+// === QR MODAL ===
+function roomDeepLink(room) {
+  const base = location.origin + location.pathname;
+  return base + '?room=' + encodeURIComponent(room.id);
+}
+
+function renderQrModal(room) {
+  const url = roomDeepLink(room);
+  const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=480x480&margin=10&data=' + encodeURIComponent(url);
+  return `
+    <div class="qr-overlay" id="qr-overlay">
+      <div class="qr-modal" onclick="event.stopPropagation()">
+        <h3>${escHtml(room.name)}</h3>
+        <div class="qr-sub">Scan in-warehouse to open this room on phone</div>
+        <img class="qr-img" src="${qrSrc}" alt="QR code"/>
+        <div class="qr-url">${escHtml(url)}</div>
+        <button class="qr-close" id="qr-close">Close</button>
+      </div>
+    </div>
+  `;
+}
+
+function bindQrModal() {
+  const overlay = document.getElementById('qr-overlay');
+  if (!overlay) return;
+  const close = () => { state.qrOpen = false; render(); };
+  overlay.onclick = close;
+  const btn = document.getElementById('qr-close');
+  if (btn) btn.onclick = (e) => { e.stopPropagation(); close(); };
+}
+
 function renderNotifPanel(notifs) {
   return `
     <div class="notif-overlay" id="notif-overlay">
@@ -2740,6 +2848,7 @@ function renderRoom(app) {
           <div class="tab" data-stub>Reports</div>
           <div class="tab" data-stub>Readings</div>
           <div class="tab" data-stub>Pair</div>
+          <button class="qr-btn" id="qr-btn" title="Show QR code — scan in-warehouse to open this room on phone">QR</button>
           <div class="back" id="back-to-fac">← Back to facility</div>
         </div>
 
@@ -2816,8 +2925,12 @@ function renderRoom(app) {
         </div>
 
         <div class="chart-card">
-          <div style="font-size:11px;color:#888;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">24-hour history</div>
-          <div id="chart-mount">${chartSvg(room)}</div>
+          <div class="chart-tabs">
+            <div class="chart-tab ${state.chartRange === '24h' ? 'active' : ''}" data-range="24h">24 hours</div>
+            <div class="chart-tab ${state.chartRange === '30d' ? 'active' : ''}" data-range="30d">30 days</div>
+            <span class="chart-range-lbl">${state.chartRange === '30d' ? 'rolling 30-day history' : 'last 24 hours'}</span>
+          </div>
+          <div id="chart-mount">${chartSvg(room, state.chartRange)}</div>
           <div class="chart-tooltip" id="chart-tooltip" style="display:none">
             <div class="ai-pill">Atmos AI</div>
             <div class="time"></div>
@@ -2826,18 +2939,33 @@ function renderRoom(app) {
         </div>
       </div>
     </div>
+    ${state.qrOpen ? renderQrModal(room) : ''}
   `;
 
   document.getElementById('reset-btn').onclick = () => { if (confirm('Reset demo to splash?')) resetState(); };
   bindNavArrows();
   const brand = document.getElementById('brand-home');
   if (brand) brand.onclick = () => setView('splash');
+  bindQrModal();
   document.getElementById('back-to-fac').onclick = () => { state.currentRoomId = null; setView('dashboard'); };
   document.querySelectorAll('[data-stub]').forEach(el => el.onclick = () => alert('"' + el.textContent + '" tab — coming soon'));
   document.getElementById('atmos-toggle').onclick = () => {
     if (_atmosAnimating) return;
     animateAtmosToggle(room);
   };
+
+  // Chart range tabs
+  document.querySelectorAll('.chart-tab').forEach(tab => {
+    tab.onclick = () => {
+      state.chartRange = tab.dataset.range;
+      saveState();
+      render();
+    };
+  });
+
+  // QR button
+  const qrBtn = document.getElementById('qr-btn');
+  if (qrBtn) qrBtn.onclick = () => { state.qrOpen = true; render(); };
 
   // Chart event hover tooltip (deviation markers)
   const tooltip = document.getElementById('chart-tooltip');
@@ -2957,24 +3085,24 @@ function animateAtmosToggle(room) {
 }
 
 // === CHART ===
-function chartSvg(room) {
+function chartSvg(room, range) {
+  range = range || (state && state.chartRange) || '24h';
+  const is30d = range === '30d';
   const crop = CROPS[room.cropId];
   const W = 980, H = 220, padL = 40, padR = 100, padT = 20, padB = 30;
   const innerW = W - padL - padR;
   const innerH = H - padT - padB;
-  const N = 48;
+  const N = is30d ? 30 : 48;
   const seed = roomSeed(room.id);
   const att = !!room.attentionReason;
 
-  // Anomaly window for attention rooms (each step ≈ 30 min over 24h chart):
-  //   redIdx -> issue starts, line begins drifting up
-  //   peakIdx -> max deviation
-  //   blueIdx -> Automation triggers (same step as peak)
-  //   recoveredIdx -> back to baseline
-  const redIdx       = 26;
-  const peakIdx      = 28;
-  const blueIdx      = 28;
-  const recoveredIdx = 31;
+  // Anomaly window for attention rooms.
+  // 24h: each step ≈ 30 min   |   30d: each step = 1 day
+  // redIdx -> issue starts, peakIdx -> max deviation, blueIdx -> Automation, recoveredIdx -> baseline
+  const redIdx       = is30d ? 22 : 26;
+  const peakIdx      = is30d ? 24 : 28;
+  const blueIdx      = is30d ? 24 : 28;
+  const recoveredIdx = is30d ? 27 : 31;
 
   function noise(i, salt) {
     return Math.sin(i * 1.7 + seed * salt + salt) * 0.5;
@@ -3034,8 +3162,9 @@ function chartSvg(room) {
 
   const lines = lineDefs.map(l => pathFromPoints(l.points, l.color));
 
-  // Index → clock time (11:00 .. + ~30 min steps)
+  // Index → label (24h: clock time / 30d: "Day N")
   function timeAt(i) {
+    if (is30d) return 'Day ' + (i + 1);
     const baseHr = 11;
     const totalMins = i * 30;
     const hr = (baseHr + Math.floor(totalMins / 60)) % 24;
@@ -3079,11 +3208,13 @@ function chartSvg(room) {
     }).join('');
   }
 
-  const xLabels = ['11:00','13:30','16:00','18:30','21:00','23:30','02:00','04:30','07:00','09:30','11:00']
-    .map((t, i) => {
-      const x = padL + (i / 10) * innerW;
-      return `<text x="${x}" y="${H - 6}" font-size="9" fill="#888" text-anchor="middle">${t}</text>`;
-    }).join('');
+  const labels24 = ['11:00','13:30','16:00','18:30','21:00','23:30','02:00','04:30','07:00','09:30','11:00'];
+  const labels30 = ['D1','D4','D7','D10','D13','D16','D19','D22','D25','D28','D30'];
+  const xLabelsArr = is30d ? labels30 : labels24;
+  const xLabels = xLabelsArr.map((t, i) => {
+    const x = padL + (i / (xLabelsArr.length - 1)) * innerW;
+    return `<text x="${x}" y="${H - 6}" font-size="9" fill="#888" text-anchor="middle">${t}</text>`;
+  }).join('');
 
   const legendItems = [
     { c: '#1a6b1a', label: 'Ethylene' },
@@ -3148,6 +3279,17 @@ function startLiveTick() {
 
 // === BOOT ===
 loadState();
+// Deep-link via ?room=ID — jump straight to that room (e.g. QR scan in-warehouse)
+(function deepLinkRoom() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const rid = params.get('room');
+    if (rid && state.facility && state.facility.rooms.some(r => r.id === rid)) {
+      state.currentRoomId = rid;
+      state.view = 'room';
+    }
+  } catch (e) { /* ignore */ }
+})();
 render();
 startLiveTick();
 </script>
